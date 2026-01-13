@@ -31,4 +31,11 @@ router.patch(
   UserControllers.updateUserRole,
 )
 
+// Route to delete user
+router.delete(
+  '/user/:userId',
+  // auth(USER_ROLE.ADMIN),
+  UserControllers.deleteUser,
+)
+
 export const UserRoute = router
