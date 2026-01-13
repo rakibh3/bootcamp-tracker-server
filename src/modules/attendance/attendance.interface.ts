@@ -4,4 +4,6 @@ export type TAttendance = {
     mission: number
     module: number
     moduleVideo: number
-}   
+}
+
+export type TAbsentFilter = 'today' | 'last2days' | 'last3days'

@@ -1,5 +1,5 @@
 import AppError from "@/error/AppError"
-import { TAttendance } from "./attendance.interface"
+import { TAbsentFilter, TAttendance } from "./attendance.interface"
 import httpStatus from "http-status"
 import { User } from "../user/user.model"
 import { AttendanceWindow } from "./attendance-window.model"
@@ -63,15 +63,30 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
     return result
 }
 
-const getAttendanceFromDatabase = async () => {
-    // Get all students with their attendance
-    const students = await User.find({ role: 'STUDENT' }).select('name email phone role attendance createdAt updatedAt')
+const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
+    const { getDhakaTimeRange } = await import('@/utils/dhakaTime.utils')
+    const QueryBuilder = (await import('@/builder/QueryBuilder')).default
+    
+    // Build query using QueryBuilder
+    const studentQuery = new QueryBuilder(
+        User.find({ role: 'STUDENT' }).select('name email phone role attendance createdAt updatedAt'),
+        query
+    )
+    
+    // Apply search for student name and email
+    studentQuery.search(['name', 'email'])
+    
+    // Apply absent filter if provided
+    studentQuery.filterAbsent(getDhakaTimeRange)
+    
+    // Execute query
+    const students = await studentQuery.modelQuery
     
     // Map attendance records to include their index
     const result = students.map(student => {
         const studentObj = student.toObject()
         if (studentObj.attendance) {
-            studentObj.attendance = studentObj.attendance.map((record, index) => ({
+            studentObj.attendance = studentObj.attendance.map((record: any, index: number) => ({
                 ...record,
                 attendanceIndex: index // Add index to each record
             }))
@@ -92,7 +107,7 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
     // Map attendance records to include their index
     const result = student.toObject()
     if (result.attendance) {
-        result.attendance = result.attendance.map((record, index) => ({
+        result.attendance = result.attendance.map((record: any, index: number) => ({
             ...record,
             attendanceIndex: index // Add index to each record
         }))
