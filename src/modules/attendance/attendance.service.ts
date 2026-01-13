@@ -127,10 +127,17 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
         })
     }
     
+    // Calculate attendance percentage
+    const totalAttendance = totalPresent + totalAbsent
+    const attendancePercentage = totalAttendance > 0 
+        ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
+        : 0
+    
     return {
         ...result,
         totalPresent,
-        totalAbsent
+        totalAbsent,
+        attendancePercentage
     }
 }
 
