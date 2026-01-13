@@ -1,0 +1,25 @@
+node_modules
+dist
+.env
+.vercel
+
+note.txt
+commit_message.txt
+
+.cursor
+.cursorrules
+.windsurf
+.windsurfrules
+
+GEMINI.md
+CLAUDE.md
+AGENT.md
+
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Postmen collection
+postman_collection.json
+postman_environment.json
+
+PERFORMANCE.md
