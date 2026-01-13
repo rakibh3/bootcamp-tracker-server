@@ -20,6 +20,11 @@ const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 8)
 
 const requestOTP = async (payload: IOTPRequest): Promise<{ message: string }> => {
   const { email } = payload
+
+  const user = await User.findOne({ email }).lean()
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
+  }
   const otpKey = getOTPRedisKey(email)
 
   // Get existing OTP data
@@ -88,6 +93,13 @@ const requestOTP = async (payload: IOTPRequest): Promise<{ message: string }> =>
 
 const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
   const { email, otp } = payload
+  if (!email || !otp) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Email and OTP are required')
+  }
+  const registeredUser = await User.findOne({ email }).lean()
+  if (!registeredUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
+  }
   const otpKey = getOTPRedisKey(email)
   const userCacheKey = `user:${email}`
 
