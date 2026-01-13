@@ -203,7 +203,16 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
     const dateToMark = targetDate || new Date(Date.now() - 24 * 60 * 60 * 1000)
     
     // Get Dhaka time range for the target date
-    const { startOfDay, endOfDay } = getDhakaTimeRange(dateToMark)
+    const { startOfDay, endOfDay, dhakaTime: currentDhakaTime } = getDhakaTimeRange(dateToMark)
+    
+    // Prevent marking absent for future dates
+    const now = getDhakaTimeRange()
+    if (startOfDay > now.startOfDay) {
+        throw new AppError(
+            httpStatus.BAD_REQUEST,
+            'Cannot mark users absent for future dates. Please provide a past or current date.'
+        )
+    }
     
     // Find all students
     const allStudents = await User.find({ role: 'STUDENT' })
