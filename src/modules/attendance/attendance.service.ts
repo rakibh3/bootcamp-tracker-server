@@ -106,14 +106,32 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
     
     // Map attendance records to include their index
     const result = student.toObject()
+    
+    // Calculate total present and absent counts
+    let totalPresent = 0
+    let totalAbsent = 0
+    
     if (result.attendance) {
-        result.attendance = result.attendance.map((record: any, index: number) => ({
-            ...record,
-            attendanceIndex: index // Add index to each record
-        }))
+        result.attendance = result.attendance.map((record: any, index: number) => {
+            // Count attendance status
+            if (record.status === 'ATTENDED') {
+                totalPresent++
+            } else if (record.status === 'ABSENT') {
+                totalAbsent++
+            }
+            
+            return {
+                ...record,
+                attendanceIndex: index // Add index to each record
+            }
+        })
     }
     
-    return result
+    return {
+        ...result,
+        totalPresent,
+        totalAbsent
+    }
 }
 
 const updateAttendanceInDatabase = async (
