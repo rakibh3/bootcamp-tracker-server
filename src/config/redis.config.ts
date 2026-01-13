@@ -8,23 +8,23 @@ const redisClient = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: Number(process.env.REDIS_PORT) || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
-  
+
   // Connection pool settings for high concurrency
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
   enableOfflineQueue: true,
-  
+
   // Performance optimizations
   lazyConnect: false,
   keepAlive: 30000,
   connectTimeout: 10000,
-  
+
   // Retry strategy with exponential backoff
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000)
     return delay
   },
-  
+
   // Reconnect on error
   reconnectOnError: (err) => {
     const targetError = 'READONLY'

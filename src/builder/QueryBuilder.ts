@@ -31,7 +31,14 @@ class QueryBuilder<T> {
     const queryObj = { ...this.query }
 
     // Filtering
-    const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'absentFilter']
+    const excludeFields = [
+      'searchTerm',
+      'sort',
+      'limit',
+      'page',
+      'fields',
+      'absentFilter',
+    ]
     excludeFields.forEach((el) => delete queryObj[el])
 
     // Convert all string values to case-insensitive regex
@@ -78,29 +85,38 @@ class QueryBuilder<T> {
   }
 
   // Filter by absent attendance within date range
-  filterAbsent(getDhakaTimeRange: () => { startOfDay: Date; endOfDay: Date; dhakaTime: Date }) {
+  filterAbsent(
+    getDhakaTimeRange: () => {
+      startOfDay: Date
+      endOfDay: Date
+      dhakaTime: Date
+    },
+  ) {
     const absentFilter = this?.query?.absentFilter as string | undefined
-    
-    if (absentFilter && ['today', 'last2days', 'last3days'].includes(absentFilter)) {
+
+    if (
+      absentFilter &&
+      ['today', 'last2days', 'last3days'].includes(absentFilter)
+    ) {
       const { startOfDay: todayStart, endOfDay: todayEnd } = getDhakaTimeRange()
-      
+
       let startDate: Date
       let endDate: Date = todayEnd
-      
-      switch(absentFilter) {
+
+      switch (absentFilter) {
         case 'today':
           startDate = todayStart
           break
         case 'last2days':
-          startDate = new Date(todayStart.getTime() - (2 * 24 * 60 * 60 * 1000))
+          startDate = new Date(todayStart.getTime() - 2 * 24 * 60 * 60 * 1000)
           break
         case 'last3days':
-          startDate = new Date(todayStart.getTime() - (3 * 24 * 60 * 60 * 1000))
+          startDate = new Date(todayStart.getTime() - 3 * 24 * 60 * 60 * 1000)
           break
         default:
           startDate = todayStart
       }
-      
+
       // Filter users who have at least one ABSENT record within the date range
       this.modelQuery = this.modelQuery.find({
         attendance: {
@@ -108,13 +124,13 @@ class QueryBuilder<T> {
             status: 'ABSENT',
             date: {
               $gte: startDate,
-              $lte: endDate
-            }
-          }
-        }
+              $lte: endDate,
+            },
+          },
+        },
       } as FilterQuery<T>)
     }
-    
+
     return this
   }
 }

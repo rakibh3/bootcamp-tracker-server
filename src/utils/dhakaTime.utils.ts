@@ -3,12 +3,12 @@
  * @returns Date object representing current Dhaka time
  */
 export const getDhakaTime = (): Date => {
-    const now = new Date()
-    const dhakaOffset = 6 * 60 // Dhaka is UTC+6 in minutes
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000)
-    const dhakaTime = new Date(utcTime + (dhakaOffset * 60000))
-    
-    return dhakaTime
+  const now = new Date()
+  const dhakaOffset = 6 * 60 // Dhaka is UTC+6 in minutes
+  const utcTime = now.getTime() + now.getTimezoneOffset() * 60000
+  const dhakaTime = new Date(utcTime + dhakaOffset * 60000)
+
+  return dhakaTime
 }
 
 /**
@@ -17,21 +17,27 @@ export const getDhakaTime = (): Date => {
  * @returns Object containing startOfDay and endOfDay Date objects
  */
 export const getDhakaTimeRange = (targetDate?: Date) => {
-    const dhakaTime = targetDate ? new Date(targetDate) : getDhakaTime()
-    
-    const startOfDay = new Date(
-        dhakaTime.getFullYear(), 
-        dhakaTime.getMonth(), 
-        dhakaTime.getDate(), 
-        0, 0, 0, 0
-    )
-    
-    const endOfDay = new Date(
-        dhakaTime.getFullYear(), 
-        dhakaTime.getMonth(), 
-        dhakaTime.getDate(), 
-        23, 59, 59, 999
-    )
+  const dhakaTime = targetDate ? new Date(targetDate) : getDhakaTime()
 
-    return { startOfDay, endOfDay, dhakaTime }
+  const startOfDay = new Date(
+    dhakaTime.getFullYear(),
+    dhakaTime.getMonth(),
+    dhakaTime.getDate(),
+    0,
+    0,
+    0,
+    0,
+  )
+
+  const endOfDay = new Date(
+    dhakaTime.getFullYear(),
+    dhakaTime.getMonth(),
+    dhakaTime.getDate(),
+    23,
+    59,
+    59,
+    999,
+  )
+
+  return { startOfDay, endOfDay, dhakaTime }
 }

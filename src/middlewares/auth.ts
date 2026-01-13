@@ -20,7 +20,10 @@ const auth = (...requiredRoles: TUserRole[]) => {
 
     // Check if the token follows Bearer scheme
     if (!authHeader.startsWith('Bearer ')) {
-      throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token format. Expected: Bearer <token>')
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        'Invalid token format. Expected: Bearer <token>',
+      )
     }
 
     // Extract token from "Bearer <token>"

@@ -1,138 +1,139 @@
-import { sendResponse } from "@/utils/sendResponse"
-import httpStatus from "http-status"
-import { catchAsync } from "@/utils/catchAsync"
-import { AttendanceService } from "./attendance.service"
-import { TAbsentFilter } from "./attendance.interface"
+import { sendResponse } from '@/utils/sendResponse'
+import httpStatus from 'http-status'
+import { catchAsync } from '@/utils/catchAsync'
+import { AttendanceService } from './attendance.service'
+import { TAbsentFilter } from './attendance.interface'
 
 const createAttendance = catchAsync(async (req, res) => {
-    const { ...payload } = req.body
+  const { ...payload } = req.body
 
-    const result = await AttendanceService.createAttendanceInDatabase(payload)
+  const result = await AttendanceService.createAttendanceInDatabase(payload)
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance created successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance created successfully',
+    data: result,
+  })
 })
 
 const getAttendance = catchAsync(async (req, res) => {
-    const result = await AttendanceService.getAttendanceFromDatabase(req.query)
+  const result = await AttendanceService.getAttendanceFromDatabase(req.query)
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance fetched successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance fetched successfully',
+    data: result,
+  })
 })
 
 const getAttendanceById = catchAsync(async (req, res) => {
-    const { studentId } = req.params
+  const { studentId } = req.params
 
-    const result = await AttendanceService.getAttendanceByIdFromDatabase(studentId)
+  const result =
+    await AttendanceService.getAttendanceByIdFromDatabase(studentId)
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance fetched successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance fetched successfully',
+    data: result,
+  })
 })
 
 const updateAttendance = catchAsync(async (req, res) => {
-    const { studentId, attendanceIndex } = req.params
-    const { ...payload } = req.body
+  const { studentId, attendanceIndex } = req.params
+  const { ...payload } = req.body
 
-    const result = await AttendanceService.updateAttendanceInDatabase(
-        studentId, 
-        parseInt(attendanceIndex), 
-        payload
-    )
+  const result = await AttendanceService.updateAttendanceInDatabase(
+    studentId,
+    parseInt(attendanceIndex),
+    payload,
+  )
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance updated successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance updated successfully',
+    data: result,
+  })
 })
 
 const deleteAttendance = catchAsync(async (req, res) => {
-    const { studentId, attendanceIndex } = req.params
+  const { studentId, attendanceIndex } = req.params
 
-    const result = await AttendanceService.deleteAttendanceFromDatabase(
-        studentId, 
-        parseInt(attendanceIndex)
-    )
+  const result = await AttendanceService.deleteAttendanceFromDatabase(
+    studentId,
+    parseInt(attendanceIndex),
+  )
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance deleted successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance deleted successfully',
+    data: result,
+  })
 })
 
 // Attendance Window Controllers
 const openAttendanceWindow = catchAsync(async (req, res) => {
-    const adminId = req.user?.id || req.body.adminId // Assuming user is attached by auth middleware
+  const adminId = req.user?.id || req.body.adminId // Assuming user is attached by auth middleware
 
-    const result = await AttendanceService.openAttendanceWindow(adminId)
+  const result = await AttendanceService.openAttendanceWindow(adminId)
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance window opened successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance window opened successfully',
+    data: result,
+  })
 })
 
 const closeAttendanceWindow = catchAsync(async (req, res) => {
-    const result = await AttendanceService.closeAttendanceWindow()
+  const result = await AttendanceService.closeAttendanceWindow()
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance window closed successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance window closed successfully',
+    data: result,
+  })
 })
 
 const getAttendanceWindowStatus = catchAsync(async (req, res) => {
-    const result = await AttendanceService.getAttendanceWindowStatus()
+  const result = await AttendanceService.getAttendanceWindowStatus()
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Attendance window status fetched successfully',
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Attendance window status fetched successfully',
+    data: result,
+  })
 })
 
 const markAbsent = catchAsync(async (req, res) => {
-    const { date } = req.body
-    const targetDate = date ? new Date(date) : undefined
+  const { date } = req.body
+  const targetDate = date ? new Date(date) : undefined
 
-    const result = await AttendanceService.markUsersAbsentForDate(targetDate)
+  const result = await AttendanceService.markUsersAbsentForDate(targetDate)
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: `Successfully marked ${result.studentsMarkedAbsent} students as absent`,
-        data: result,
-    })
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Successfully marked ${result.studentsMarkedAbsent} students as absent`,
+    data: result,
+  })
 })
 
 export const AttendanceController = {
-    createAttendance,
-    getAttendance,
-    getAttendanceById,
-    updateAttendance,
-    deleteAttendance,
-    openAttendanceWindow,
-    closeAttendanceWindow,
-    getAttendanceWindowStatus,
-    markAbsent,
+  createAttendance,
+  getAttendance,
+  getAttendanceById,
+  updateAttendance,
+  deleteAttendance,
+  openAttendanceWindow,
+  closeAttendanceWindow,
+  getAttendanceWindowStatus,
+  markAbsent,
 }

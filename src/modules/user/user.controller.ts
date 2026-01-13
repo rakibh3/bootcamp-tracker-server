@@ -13,9 +13,9 @@ const createUser = catchAsync(async (req, res) => {
   let message
   if (result?.role === USER_ROLE.STUDENT) {
     message = 'Student registered successfully'
-  } else if(result?.role === USER_ROLE.ADMIN) {
+  } else if (result?.role === USER_ROLE.ADMIN) {
     message = 'Admin registered successfully'
-  } 
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -39,7 +39,7 @@ const getAllUsers = catchAsync(async (req, res) => {
 
 // Update user role
 const updateUserRole = catchAsync(async (req, res) => {
-  const { userId } = req.params 
+  const { userId } = req.params
   const { role } = req.body
 
   const result = await UserServices.updateUserRoleInDatabase(userId, role)

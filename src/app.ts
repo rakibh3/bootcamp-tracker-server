@@ -20,15 +20,19 @@ dayjs.extend(timezone)
 const app: Application = express()
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable for HTML responses
-}))
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable for HTML responses
+  }),
+)
 
 // Compression middleware for response size reduction
-app.use(compression({
-  level: 6, // Balance between speed and compression
-  threshold: 1024, // Only compress responses > 1KB
-}))
+app.use(
+  compression({
+    level: 6, // Balance between speed and compression
+    threshold: 1024, // Only compress responses > 1KB
+  }),
+)
 
 // Parser with size limits
 app.use(express.json({ limit: '10kb' }))
@@ -55,7 +59,7 @@ const getRootController = (req: Request, res: Response) => {
   const now = dayjs()
   const dateStr = now.format('YYYY-MM-DD')
   const timeStr = now.format('hh:mm:ss A')
- 
+
   const html = ` <!DOCTYPE html>
     <html lang="en">
     <head>

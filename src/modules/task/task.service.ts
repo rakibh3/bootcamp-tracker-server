@@ -26,7 +26,10 @@ const createTaskIntoDatabase = async (payload: TTask) => {
   return result
 }
 
-const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => {
+const updateTaskInDatabase = async (
+  taskId: string,
+  payload: Partial<TTask>,
+) => {
   const { endOfDay } = getDhakaTimeRange()
 
   if (payload.dueDate) {

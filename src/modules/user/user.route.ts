@@ -19,9 +19,11 @@ router.post(
 )
 
 // Route to get all users
-router.get('/users',
+router.get(
+  '/users',
   // auth(USER_ROLE.ADMIN),
- UserControllers.getAllUsers)
+  UserControllers.getAllUsers,
+)
 
 // Route to update user role
 router.patch(

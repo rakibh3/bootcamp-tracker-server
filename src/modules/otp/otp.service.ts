@@ -5,12 +5,19 @@ import emailQueue from '@/config/queue.config'
 import AppError from '@/error/AppError'
 import { User } from '@/modules/user/user.model'
 import { generateToken } from '@/helper/generateToken'
-import { IOTPRequest, IOTPVerify, IOTPData, IAuthResponse } from './otp.interface'
+import {
+  IOTPRequest,
+  IOTPVerify,
+  IOTPData,
+  IAuthResponse,
+} from './otp.interface'
 import { generateOTP, getOTPRedisKey } from '@/utils/otp.utils'
 
 const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_MINUTES || 5) * 60
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5)
-const OTP_RESEND_COOLDOWN = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS || 60)
+const OTP_RESEND_COOLDOWN = Number(
+  process.env.OTP_RESEND_COOLDOWN_SECONDS || 60,
+)
 const OTP_MAX_RESEND = Number(process.env.OTP_MAX_RESEND_ATTEMPTS || 3)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as string
@@ -18,7 +25,9 @@ const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as string
 // Optimized bcrypt rounds for high throughput (lower = faster, but less secure)
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 8)
 
-const requestOTP = async (payload: IOTPRequest): Promise<{ message: string }> => {
+const requestOTP = async (
+  payload: IOTPRequest,
+): Promise<{ message: string }> => {
   const { email } = payload
 
   const user = await User.findOne({ email }).lean()
@@ -53,7 +62,7 @@ const requestOTP = async (payload: IOTPRequest): Promise<{ message: string }> =>
 
   // Generate OTP
   const otp = generateOTP()
-  
+
   // Hash OTP with optimized rounds
   const hashedOTP = await bcrypt.hash(otp, BCRYPT_ROUNDS)
 
@@ -158,7 +167,7 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
     console.log(`Cache User`, user)
   } else {
     user = await User.findOne({ email }).lean()
-    
+
     if (!user) {
       user = await User.create({ email })
     }

@@ -53,7 +53,6 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
   await emailTransporter.sendMail(mailOptions)
 }
 
-
 export const EmailService = {
   sendOTPEmail,
 }
