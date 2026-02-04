@@ -42,7 +42,7 @@ const updateUserRole = catchAsync(async (req, res) => {
   const { userId } = req.params
   const { role } = req.body
 
-  const result = await UserServices.updateUserRoleInDatabase(userId, role)
+  const result = await UserServices.updateUserRoleInDatabase(userId as string, role)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -56,7 +56,7 @@ const updateUserRole = catchAsync(async (req, res) => {
 const deleteUser = catchAsync(async (req, res) => {
   const { userId } = req.params
 
-  const result = await UserServices.deleteUserFromDatabase(userId)
+  const result = await UserServices.deleteUserFromDatabase(userId as string)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -66,9 +66,38 @@ const deleteUser = catchAsync(async (req, res) => {
   })
 })
 
+// Get all SRMs
+const getSRMs = catchAsync(async (req, res) => {
+  const result = await UserServices.getSRMsFromDatabase()
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'SRMs fetched successfully',
+    data: result,
+  })
+})
+
+// Update SMTP config
+const updateSmtpConfig = catchAsync(async (req, res) => {
+  const userId = req.user._id
+  const { smtpConfig } = req.body
+
+  const result = await UserServices.updateSmtpConfigInDatabase(userId, smtpConfig)
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'SMTP config updated successfully',
+    data: result,
+  })
+})
+
 export const UserControllers = {
   createUser,
   getAllUsers,
   updateUserRole,
   deleteUser,
+  getSRMs,
+  updateSmtpConfig,
 }

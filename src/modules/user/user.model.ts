@@ -50,12 +50,17 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     role: {
       type: String,
-      enum: ['STUDENT', 'ADMIN', 'SUPER_ADMIN'],
+      enum: ['STUDENT', 'ADMIN', 'SUPER_ADMIN', 'SRM'],
       default: 'STUDENT',
     },
     attendance: {
       type: [attendanceRecordSchema],
       default: [],
+    },
+    smtpConfig: {
+      appPassword: {
+        type: String,
+      },
     },
   },
   {

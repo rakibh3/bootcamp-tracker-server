@@ -33,10 +33,24 @@ router.patch(
   UserControllers.updateUserRole,
 )
 
+// Route to get all SRMs
+router.get(
+  '/users/srm',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
+  UserControllers.getSRMs,
+)
+
+// Route to update SMTP config
+router.patch(
+  '/users/smtp-config',
+  auth(USER_ROLE.SRM),
+  UserControllers.updateSmtpConfig,
+)
+
 // Route to delete user
 router.delete(
   '/user/:userId',
-  // auth(USER_ROLE.ADMIN),
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
   UserControllers.deleteUser,
 )
 

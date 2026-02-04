@@ -14,8 +14,11 @@ export type TUser = {
   name?: string
   email: string
   phone: string
-  role: 'STUDENT' | 'ADMIN' | 'SUPER_ADMIN'
+  role: 'STUDENT' | 'ADMIN' | 'SUPER_ADMIN' | 'SRM'
   attendance?: TAttendanceRecord[]
+  smtpConfig?: {
+    appPassword?: string
+  }
 }
 
 export interface UserModel extends Model<TUser> {

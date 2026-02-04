@@ -42,9 +42,27 @@ const deleteUserFromDatabase = async (userId: string) => {
   return result
 }
 
+// Get all SRMs from the database
+const getSRMsFromDatabase = async () => {
+  const result = await User.find({ role: 'SRM' })
+  return result
+}
+
+// Update SMTP config in the database
+const updateSmtpConfigInDatabase = async (userId: string, smtpConfig: { appPassword: string }) => {
+  const result = await User.findByIdAndUpdate(
+    userId,
+    { smtpConfig },
+    { new: true, runValidators: true },
+  )
+  return result
+}
+
 export const UserServices = {
   createUserIntoDatabase,
   getAllUsersFromDatabase,
   updateUserRoleInDatabase,
   deleteUserFromDatabase,
+  getSRMsFromDatabase,
+  updateSmtpConfigInDatabase,
 }

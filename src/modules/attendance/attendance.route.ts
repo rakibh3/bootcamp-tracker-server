@@ -15,7 +15,13 @@ router.post(
   AttendanceController.createAttendance,
 )
 router.get('/get-attendance', AttendanceController.getAttendance)
+router.get(
+  '/get-attendance/srm',
+  auth('SRM'),
+  AttendanceController.getSrmStudentsAttendance,
+)
 router.get('/get-attendance/:studentId', AttendanceController.getAttendanceById)
+
 router.patch(
   '/update-attendance/:studentId/:attendanceIndex',
   validateRequest(updateAttendanceValidationSchema),
@@ -23,18 +29,27 @@ router.patch(
 )
 router.delete(
   '/delete-attendance/:studentId/:attendanceIndex',
+  auth('ADMIN', 'SUPER_ADMIN'),
   AttendanceController.deleteAttendance,
 )
 
 // Attendance Window Control Routes
-router.post('/open-window', AttendanceController.openAttendanceWindow) // TODO: Add admin auth middleware
-router.post('/close-window', AttendanceController.closeAttendanceWindow) // TODO: Add admin auth middleware
+router.post(
+  '/open-window',
+  auth('ADMIN', 'SUPER_ADMIN'),
+  AttendanceController.openAttendanceWindow,
+)
+router.post(
+  '/close-window',
+  auth('ADMIN', 'SUPER_ADMIN'),
+  AttendanceController.closeAttendanceWindow,
+)
 router.get('/window-status', AttendanceController.getAttendanceWindowStatus)
 
 // Mark Absent Route (Admin Only)
 router.post(
   '/mark-absent',
-  // auth('ADMIN', 'SUPER_ADMIN'),
+  auth('ADMIN', 'SUPER_ADMIN'),
   AttendanceController.markAbsent,
 )
 

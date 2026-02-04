@@ -126,6 +126,18 @@ const markAbsent = catchAsync(async (req, res) => {
   })
 })
 
+const getSrmStudentsAttendance = catchAsync(async (req, res) => {
+  const srmId = req.user._id // Using req.user._id as per standard
+  const result = await AttendanceService.getSrmStudentsAttendanceFromDatabase(srmId, req.query)
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'SRM students attendance fetched successfully',
+    data: result,
+  })
+})
+
 export const AttendanceController = {
   createAttendance,
   getAttendance,
@@ -136,4 +148,5 @@ export const AttendanceController = {
   closeAttendanceWindow,
   getAttendanceWindowStatus,
   markAbsent,
+  getSrmStudentsAttendance,
 }

@@ -1,4 +1,4 @@
-import { FilterQuery, Query } from 'mongoose'
+import mongoose, { Query } from 'mongoose'
 
 class QueryBuilder<T> {
   public modelQuery: Query<T[], T>
@@ -18,7 +18,7 @@ class QueryBuilder<T> {
           (field) =>
             ({
               [field]: { $regex: searchTerm, $options: 'i' },
-            }) as FilterQuery<T>,
+            }) as any,
         ),
       })
     }
@@ -48,7 +48,7 @@ class QueryBuilder<T> {
       }
     })
 
-    this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>)
+    this.modelQuery = this.modelQuery.find(queryObj as any)
     return this
   }
 
@@ -128,10 +128,26 @@ class QueryBuilder<T> {
             },
           },
         },
-      } as FilterQuery<T>)
+      } as any)
     }
 
     return this
+  }
+
+  // Count total documents
+  async countTotal() {
+    const totalQueries = this.modelQuery.getFilter()
+    const total = await this.modelQuery.model.countDocuments(totalQueries)
+    const page = Number(this?.query?.page) || 1
+    const limit = Number(this?.query?.limit) || 10
+    const totalPage = Math.ceil(total / limit)
+
+    return {
+      page,
+      limit,
+      total,
+      totalPage,
+    }
   }
 }
 

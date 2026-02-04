@@ -4,6 +4,7 @@ import httpStatus from 'http-status'
 import { User } from '../user/user.model'
 import { AttendanceWindow } from './attendance-window.model'
 import { getDhakaTimeRange } from '@/utils/dhakaTime.utils'
+import { Student } from '../student/student.model'
 
 const createAttendanceInDatabase = async (payload: TAttendance) => {
   // Check if attendance window is open
@@ -84,9 +85,85 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
   // Execute query
   const students = await studentQuery.modelQuery
 
+  // Fetch student profiles to get phone and discord
+  const studentProfiles = await Student.find({
+    userId: { $in: students.map((s) => s._id) },
+  }).select('userId phone discordUsername')
+
+  // Create a map for quick lookup
+  const profileMap = new Map(
+    studentProfiles.map((p) => [p.userId.toString(), p]),
+  )
+
+  // Map attendance records to include their index and profile data
+  const result = students.map((student) => {
+    const studentObj = student.toObject() as any
+    const profile = profileMap.get(studentObj._id.toString())
+
+    if (profile) {
+      studentObj.phone = profile.phone
+      studentObj.discordUsername = profile.discordUsername
+    }
+
+    if (studentObj.attendance) {
+      studentObj.attendance = studentObj.attendance.map(
+        (record: any, index: number) => ({
+          ...record,
+          attendanceIndex: index, // Add index to each record
+        }),
+      )
+    }
+    return studentObj
+  })
+
+  return result
+}
+
+const getSrmStudentsAttendanceFromDatabase = async (
+  srmId: string,
+  query: Record<string, unknown>,
+) => {
+  const { getDhakaTimeRange } = await import('@/utils/dhakaTime.utils')
+  const QueryBuilder = (await import('@/builder/QueryBuilder')).default
+
+  // Find students assigned to this SRM
+  const assignedStudents = await Student.find({ assignedSrmId: srmId }).select(
+    'userId phone discordUsername',
+  )
+  const studentUserIds = assignedStudents.map((s) => s.userId)
+
+  // Create lookup map
+  const profileMap = new Map(
+    assignedStudents.map((s) => [s.userId.toString(), s]),
+  )
+
+  // Build query for those user IDs
+  const studentQuery = new QueryBuilder(
+    User.find({ _id: { $in: studentUserIds } }).select(
+      'name email phone role attendance createdAt updatedAt',
+    ),
+    query,
+  )
+
+  // Apply search for student name and email
+  studentQuery.search(['name', 'email'])
+
+  // Apply absent filter if provided
+  studentQuery.filterAbsent(getDhakaTimeRange)
+
+  // Execute query
+  const students = await studentQuery.modelQuery
+
   // Map attendance records to include their index
   const result = students.map((student) => {
-    const studentObj = student.toObject()
+    const studentObj = student.toObject() as any
+    const profile = profileMap.get(studentObj._id.toString())
+
+    if (profile) {
+      studentObj.phone = profile.phone
+      studentObj.discordUsername = profile.discordUsername
+    }
+
     if (studentObj.attendance) {
       studentObj.attendance = studentObj.attendance.map(
         (record: any, index: number) => ({
@@ -110,8 +187,18 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
   }
 
+  // Fetch student profile
+  const profile = await Student.findOne({ userId: id }).select(
+    'phone discordUsername',
+  )
+
   // Map attendance records to include their index
-  const result = student.toObject()
+  const result = student.toObject() as any
+
+  if (profile) {
+    result.phone = profile.phone
+    result.discordUsername = profile.discordUsername
+  }
 
   // Calculate total present and absent counts
   let totalPresent = 0
@@ -287,7 +374,7 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
       update: {
         $push: {
           attendance: {
-            status: 'ABSENT',
+            status: 'ABSENT' as const,
             mission: 0,
             module: 0,
             moduleVideo: 0,
@@ -324,4 +411,5 @@ export const AttendanceService = {
   closeAttendanceWindow,
   getAttendanceWindowStatus,
   markUsersAbsentForDate,
+  getSrmStudentsAttendanceFromDatabase,
 }
