@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer'
 import emailTransporter from '@/config/email.config'
 
 const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
@@ -55,4 +56,30 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
 
 export const EmailService = {
   sendOTPEmail,
+  sendPersonalizedEmail: async (
+    senderConfig: { email: string; appPassword: string; name?: string },
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<void> => {
+    // Create a temporary transporter for this specific sender
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: senderConfig.email,
+        pass: senderConfig.appPassword,
+      },
+    })
+
+    const mailOptions = {
+      from: senderConfig.name
+        ? `"${senderConfig.name}" <${senderConfig.email}>`
+        : senderConfig.email,
+      to,
+      subject,
+      html,
+    }
+
+    await transporter.sendMail(mailOptions)
+  },
 }
