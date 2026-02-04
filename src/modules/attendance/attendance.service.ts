@@ -22,10 +22,18 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
     )
   }
 
+  // Check verification code if it's set in the window
+  if (windowStatus.verificationCode && payload.verificationCode !== windowStatus.verificationCode) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Invalid verification code. Please check with your mentor.',
+    )
+  }
+
   const { startOfDay, endOfDay, dhakaTime } = getDhakaTimeRange()
 
   // Check if student already has attendance for today
-  const student = await User.findById(payload.student)
+  const student = await User.findById(payload.studentID)
 
   if (!student) {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
@@ -46,7 +54,7 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
 
   // Add attendance to student's array
   const result = await User.findByIdAndUpdate(
-    payload.student,
+    payload.studentID,
     {
       $push: {
         attendance: {
@@ -54,6 +62,7 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
           mission: payload.mission,
           module: payload.module,
           moduleVideo: payload.moduleVideo,
+          note: payload.note,
           date: dhakaTime,
         },
       },
@@ -85,10 +94,12 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
   // Execute query
   const students = await studentQuery.modelQuery
 
-  // Fetch student profiles to get phone and discord
+  // Fetch student profiles to get phone, discord, and assignedSrmId
   const studentProfiles = await Student.find({
     userId: { $in: students.map((s) => s._id) },
-  }).select('userId phone discordUsername')
+  })
+    .select('userId phone discordUsername assignedSrmId')
+    .populate('assignedSrmId', 'name email') // Populate SRM details
 
   // Create a map for quick lookup
   const profileMap = new Map(
@@ -103,17 +114,44 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
     if (profile) {
       studentObj.phone = profile.phone
       studentObj.discordUsername = profile.discordUsername
+      studentObj.assignedSrmId = profile.assignedSrmId
     }
+
+    // Calculate attendance percentage
+    let totalPresent = 0
+    let totalAbsent = 0
 
     if (studentObj.attendance) {
       studentObj.attendance = studentObj.attendance.map(
-        (record: any, index: number) => ({
-          ...record,
-          attendanceIndex: index, // Add index to each record
-        }),
+        (record: any, index: number) => {
+          // Count attendance status
+          if (record.status === 'ATTENDED') {
+            totalPresent++
+          } else if (record.status === 'ABSENT') {
+            totalAbsent++
+          }
+
+          return {
+            ...record,
+            attendanceIndex: index, // Add index to each record
+          }
+        },
       )
     }
-    return studentObj
+
+    // Calculate attendance percentage
+    const totalAttendance = totalPresent + totalAbsent
+    const attendancePercentage =
+      totalAttendance > 0
+        ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
+        : 0
+
+    return {
+      ...studentObj,
+      attendancePercentage,
+      totalPresent,
+      totalAbsent,
+    }
   })
 
   return result
@@ -154,7 +192,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
   // Execute query
   const students = await studentQuery.modelQuery
 
-  // Map attendance records to include their index
+  // Map attendance records to include their index and calculate percentage
   const result = students.map((student) => {
     const studentObj = student.toObject() as any
     const profile = profileMap.get(studentObj._id.toString())
@@ -164,15 +202,41 @@ const getSrmStudentsAttendanceFromDatabase = async (
       studentObj.discordUsername = profile.discordUsername
     }
 
+    // Calculate attendance percentage
+    let totalPresent = 0
+    let totalAbsent = 0
+
     if (studentObj.attendance) {
       studentObj.attendance = studentObj.attendance.map(
-        (record: any, index: number) => ({
-          ...record,
-          attendanceIndex: index, // Add index to each record
-        }),
+        (record: any, index: number) => {
+          // Count attendance status
+          if (record.status === 'ATTENDED') {
+            totalPresent++
+          } else if (record.status === 'ABSENT') {
+            totalAbsent++
+          }
+
+          return {
+            ...record,
+            attendanceIndex: index, // Add index to each record
+          }
+        },
       )
     }
-    return studentObj
+
+    // Calculate attendance percentage
+    const totalAttendance = totalPresent + totalAbsent
+    const attendancePercentage =
+      totalAttendance > 0
+        ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
+        : 0
+
+    return {
+      ...studentObj,
+      attendancePercentage,
+      totalPresent,
+      totalAbsent,
+    }
   })
 
   return result
@@ -291,17 +355,19 @@ const deleteAttendanceFromDatabase = async (
 }
 
 // Attendance Window Control Methods
-const openAttendanceWindow = async (adminId: string) => {
+const openAttendanceWindow = async (adminId: string, verificationCode?: string) => {
   let windowStatus = await AttendanceWindow.findOne()
 
   if (!windowStatus) {
     windowStatus = await AttendanceWindow.create({
       isOpen: true,
+      verificationCode,
       openedBy: adminId,
       openedAt: new Date(),
     })
   } else {
     windowStatus.isOpen = true
+    windowStatus.verificationCode = verificationCode
     windowStatus.openedBy = adminId
     windowStatus.openedAt = new Date()
     windowStatus.closedAt = undefined

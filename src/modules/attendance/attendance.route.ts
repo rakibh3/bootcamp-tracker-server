@@ -11,14 +11,20 @@ const router = express.Router()
 
 router.post(
   '/create-attendance',
+  auth('ADMIN', 'SUPER_ADMIN', 'SRM', 'STUDENT'),
   validateRequest(createAttendanceValidationSchema),
   AttendanceController.createAttendance,
 )
-router.get('/get-attendance', AttendanceController.getAttendance)
+router.get('/get-attendance', auth('ADMIN'), AttendanceController.getAttendance)
 router.get(
   '/get-attendance/srm',
   auth('SRM'),
   AttendanceController.getSrmStudentsAttendance,
+)
+router.get(
+  '/get-attendance/student',
+  auth('STUDENT'),
+  AttendanceController.getStudentAttendance,
 )
 router.get('/get-attendance/:studentId', AttendanceController.getAttendanceById)
 

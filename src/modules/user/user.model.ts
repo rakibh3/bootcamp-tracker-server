@@ -25,6 +25,9 @@ const attendanceRecordSchema = new Schema(
       required: true,
       default: Date.now,
     },
+    note: {
+      type: String,
+    },
   },
   {
     timestamps: true,

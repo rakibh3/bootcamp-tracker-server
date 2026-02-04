@@ -32,7 +32,7 @@ const getAttendanceById = catchAsync(async (req, res) => {
   const { studentId } = req.params
 
   const result =
-    await AttendanceService.getAttendanceByIdFromDatabase(studentId)
+    await AttendanceService.getAttendanceByIdFromDatabase(studentId as string)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -47,8 +47,8 @@ const updateAttendance = catchAsync(async (req, res) => {
   const { ...payload } = req.body
 
   const result = await AttendanceService.updateAttendanceInDatabase(
-    studentId,
-    parseInt(attendanceIndex),
+    studentId as string,
+    parseInt(Array.isArray(attendanceIndex) ? attendanceIndex[0] : attendanceIndex),
     payload,
   )
 
@@ -64,8 +64,8 @@ const deleteAttendance = catchAsync(async (req, res) => {
   const { studentId, attendanceIndex } = req.params
 
   const result = await AttendanceService.deleteAttendanceFromDatabase(
-    studentId,
-    parseInt(attendanceIndex),
+    studentId as string,
+    parseInt(Array.isArray(attendanceIndex) ? attendanceIndex[0] : attendanceIndex),
   )
 
   sendResponse(res, {
@@ -127,13 +127,26 @@ const markAbsent = catchAsync(async (req, res) => {
 })
 
 const getSrmStudentsAttendance = catchAsync(async (req, res) => {
-  const srmId = req.user._id // Using req.user._id as per standard
+  const srmId = req.user._id || req.user.id // Try both _id and id
   const result = await AttendanceService.getSrmStudentsAttendanceFromDatabase(srmId, req.query)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'SRM students attendance fetched successfully',
+    data: result,
+  })
+})
+
+// Get current student's attendance
+const getStudentAttendance = catchAsync(async (req, res) => {
+  const userId = req.user.id
+  const result = await AttendanceService.getAttendanceByIdFromDatabase(userId)
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'My attendance fetched successfully',
     data: result,
   })
 })
@@ -149,4 +162,5 @@ export const AttendanceController = {
   getAttendanceWindowStatus,
   markAbsent,
   getSrmStudentsAttendance,
+  getStudentAttendance,
 }

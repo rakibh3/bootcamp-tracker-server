@@ -177,7 +177,7 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
   }
 
   const tokenPayload = {
-    id: user._id.toString(),
+    _id: user._id.toString(),
     email: user.email,
     role: user.role || 'STUDENT',
   }
@@ -187,9 +187,12 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
   return {
     accessToken,
     user: {
-      id: user._id.toString(),
+      _id: user._id.toString(),
       email: user.email,
       name: user.name,
+      role: user.role || 'STUDENT',
+      discordUsername: user.discordUsername,
+      phone: user.phone,
     },
   }
 }

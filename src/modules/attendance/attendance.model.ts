@@ -3,8 +3,8 @@ import { TAttendance } from './attendance.interface'
 
 const attendanceSchema = new Schema<TAttendance>(
   {
-    student: {
-      type: String,
+    studentID: {
+      type: Schema.Types.ObjectId,
       required: true,
       ref: 'User',
     },
@@ -24,6 +24,9 @@ const attendanceSchema = new Schema<TAttendance>(
     moduleVideo: {
       type: Number,
       required: true,
+    },
+    note: {
+      type: String,
     },
   },
   {

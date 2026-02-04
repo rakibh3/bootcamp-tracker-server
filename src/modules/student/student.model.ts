@@ -17,25 +17,25 @@ const studentSchema = new Schema<TStudent>(
       type: String,
       required: true,
     },
-    batchNumber: {
-      type: Number,
-      required: true,
-    },
+    // batchNumber: {
+    //   type: Number,
+    //   required: true,
+    // },
     enrollmentDate: {
       type: Date,
       required: true,
       default: Date.now,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
-      enum: ['ACTIVE', 'INACTIVE', 'DROPPED', 'COMPLETED'],
+      enum: ['ACTIVE', 'INACTIVE'],
       default: 'ACTIVE',
     },
     totalAttendance: {
-      type: Number,
-      default: 0,
-    },
-    completedModules: {
       type: Number,
       default: 0,
     },

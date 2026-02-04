@@ -17,8 +17,11 @@ export interface IOTPData {
 export interface IAuthResponse {
   accessToken: string
   user: {
-    id: string
+    _id: string
     email: string
     name?: string
+    role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'
+    discordUsername?: string
+    phone?: string
   }
 }

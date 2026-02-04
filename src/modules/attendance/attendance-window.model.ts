@@ -8,6 +8,9 @@ const attendanceWindowSchema = new Schema<TAttendanceWindow>(
       required: true,
       default: false,
     },
+    verificationCode: {
+      type: String,
+    },
     openedBy: {
       type: String,
       ref: 'User',
