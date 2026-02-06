@@ -17,9 +17,7 @@ export const handleZodValidationError = (error: ZodError): TErrorResponse => {
     }
   })
 
-  const errorMessage = errorMessages
-    .map((error) => `${error.path} ${error.message}`)
-    .join(', ')
+  const errorMessage = errorMessages.map((error) => `${error.path} ${error.message}`).join(', ')
 
   return {
     statusCode,

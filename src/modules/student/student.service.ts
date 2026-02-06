@@ -105,19 +105,16 @@ const assignStudentsToSRMInDatabase = async (srmId: string, studentIds: string[]
 
   // Update students by userId (not student document _id)
   // The frontend passes user IDs, not student document IDs
-  const result = await Student.updateMany(
-    { userId: { $in: studentIds } },
-    { assignedSrmId: srmId },
-  )
-  
+  const result = await Student.updateMany({ userId: { $in: studentIds } }, { assignedSrmId: srmId })
+
   if (result.matchedCount === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No students found with the provided IDs')
   }
-  
+
   return {
     matchedCount: result.matchedCount,
     modifiedCount: result.modifiedCount,
-    message: `${result.modifiedCount} student(s) assigned to SRM successfully`
+    message: `${result.modifiedCount} student(s) assigned to SRM successfully`,
   }
 }
 

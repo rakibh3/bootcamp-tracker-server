@@ -34,8 +34,8 @@ const deleteUserFromDatabase = async (userId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found')
   }
 
-  // Delete related attendance records
-  await Attendance.deleteMany({ student: userId })
+  // Delete related attendance records from Attendance collection
+  await Attendance.deleteMany({ studentId: userId })
 
   // Delete the user
   const result = await User.findByIdAndDelete(userId)

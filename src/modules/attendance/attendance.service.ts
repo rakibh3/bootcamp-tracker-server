@@ -5,6 +5,8 @@ import { User } from '../user/user.model'
 import { AttendanceWindow } from './attendance-window.model'
 import { getDhakaTimeRange } from '@/utils/dhakaTime.utils'
 import { Student } from '../student/student.model'
+import { Attendance } from './attendance.model'
+import QueryBuilder from '@/builder/QueryBuilder'
 
 const createAttendanceInDatabase = async (payload: TAttendance) => {
   // Check if attendance window is open
@@ -32,122 +34,127 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
 
   const { startOfDay, endOfDay, dhakaTime } = getDhakaTimeRange()
 
-  // Check if student already has attendance for today
-  const student = await User.findById(payload.studentID)
+  // Check if student exists
+  const student = await User.findById(payload.studentId)
 
   if (!student) {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
   }
 
   // Check if attendance already exists for today
-  const hasAttendanceToday = student.attendance?.some((record) => {
-    const recordDate = new Date(record.date)
-    return recordDate >= startOfDay && recordDate <= endOfDay
+  const existingAttendance = await Attendance.findOne({
+    studentId: payload.studentId,
+    date: { $gte: startOfDay, $lte: endOfDay },
   })
 
-  if (hasAttendanceToday) {
+  if (existingAttendance) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       'Attendance already created for today. You can only create one attendance per day.',
     )
   }
 
-  // Add attendance to student's array
-  const result = await User.findByIdAndUpdate(
-    payload.studentID,
-    {
-      $push: {
-        attendance: {
-          status: payload.status,
-          mission: payload.mission,
-          module: payload.module,
-          moduleVideo: payload.moduleVideo,
-          note: payload.note,
-          date: dhakaTime,
-        },
-      },
-    },
-    { new: true, runValidators: true },
-  )
+  // Create attendance record in the Attendance collection
+  const result = await Attendance.create({
+    studentId: payload.studentId,
+    status: payload.status,
+    mission: payload.mission,
+    module: payload.module,
+    moduleVideo: payload.moduleVideo,
+    note: payload.note,
+    date: dhakaTime,
+  })
 
   return result
 }
 
 const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
-  const { getDhakaTimeRange } = await import('@/utils/dhakaTime.utils')
-  const QueryBuilder = (await import('@/builder/QueryBuilder')).default
+  const { startOfDay, endOfDay } = getDhakaTimeRange()
 
-  // Build query using QueryBuilder
-  const studentQuery = new QueryBuilder(
-    User.find({ role: 'STUDENT' }).select(
-      'name email phone role attendance createdAt updatedAt',
-    ),
-    query,
+  // Get all students with their profile data
+  const students = await User.find({ role: 'STUDENT' }).select(
+    'name email phone role createdAt updatedAt',
   )
 
-  // Apply search for student name and email
-  studentQuery.search(['name', 'email'])
-
-  // Apply absent filter if provided
-  studentQuery.filterAbsent(getDhakaTimeRange)
-
-  // Execute query
-  const students = await studentQuery.modelQuery
-
-  // Fetch student profiles to get phone, discord, and assignedSrmId
+  // Fetch student profiles
   const studentProfiles = await Student.find({
     userId: { $in: students.map((s) => s._id) },
   })
-    .select('userId phone discordUsername assignedSrmId')
-    .populate('assignedSrmId', 'name email') // Populate SRM details
+    .select('userId discordUsername assignedSrmId')
+    .populate('assignedSrmId', 'name email')
 
-  // Create a map for quick lookup
-  const profileMap = new Map(
-    studentProfiles.map((p) => [p.userId.toString(), p]),
-  )
+  const profileMap = new Map(studentProfiles.map((p) => [p.userId.toString(), p]))
 
-  // Map attendance records to include their index and profile data
-  const result = students.map((student) => {
+  // Fetch all attendance records for these students
+  const studentIds = students.map((s) => s._id)
+  const allAttendance = await Attendance.find({ studentId: { $in: studentIds } }).sort({
+    date: -1,
+  })
+
+  // Group attendance by student
+  const attendanceMap = new Map<string, TAttendance[]>()
+  allAttendance.forEach((record) => {
+    const key = record.studentId.toString()
+    if (!attendanceMap.has(key)) {
+      attendanceMap.set(key, [])
+    }
+    attendanceMap.get(key)!.push(record.toObject() as TAttendance)
+  })
+
+  // Apply absent filter if provided
+  let filteredStudents = students
+  const absentFilter = query.absentFilter as TAbsentFilter | undefined
+
+  if (absentFilter) {
+    const filterDays = absentFilter === 'today' ? 1 : absentFilter === 'last2days' ? 2 : 3
+    const filterDate = new Date()
+    filterDate.setDate(filterDate.getDate() - filterDays + 1)
+    const { startOfDay: filterStart } = getDhakaTimeRange(filterDate)
+
+    filteredStudents = students.filter((student) => {
+      const studentAttendance = attendanceMap.get(student._id.toString()) || []
+      // Check if student has been absent continuously for the filter period
+      const recentRecords = studentAttendance.filter((a) => new Date(a.date) >= filterStart)
+      return recentRecords.length === 0 || recentRecords.every((a) => a.status === 'ABSENT')
+    })
+  }
+
+  // Apply search filter if provided
+  const searchTerm = query.searchTerm as string | undefined
+  if (searchTerm) {
+    const searchRegex = new RegExp(searchTerm, 'i')
+    filteredStudents = filteredStudents.filter(
+      (s) => searchRegex.test(s.name || '') || searchRegex.test(s.email),
+    )
+  }
+
+  // Map results with attendance data
+  const result = filteredStudents.map((student) => {
     const studentObj = student.toObject() as any
     const profile = profileMap.get(studentObj._id.toString())
+    const attendance = attendanceMap.get(studentObj._id.toString()) || []
 
     if (profile) {
-      studentObj.phone = profile.phone
       studentObj.discordUsername = profile.discordUsername
       studentObj.assignedSrmId = profile.assignedSrmId
     }
 
-    // Calculate attendance percentage
-    let totalPresent = 0
-    let totalAbsent = 0
-
-    if (studentObj.attendance) {
-      studentObj.attendance = studentObj.attendance.map(
-        (record: any, index: number) => {
-          // Count attendance status
-          if (record.status === 'ATTENDED') {
-            totalPresent++
-          } else if (record.status === 'ABSENT') {
-            totalAbsent++
-          }
-
-          return {
-            ...record,
-            attendanceIndex: index, // Add index to each record
-          }
-        },
-      )
-    }
-
-    // Calculate attendance percentage
+    // Calculate attendance stats
+    const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
+    const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
     const totalAttendance = totalPresent + totalAbsent
     const attendancePercentage =
-      totalAttendance > 0
-        ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
-        : 0
+      totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
+
+    // Add index to each attendance record
+    const attendanceWithIndex = attendance.map((record, index) => ({
+      ...record,
+      attendanceIndex: index,
+    }))
 
     return {
       ...studentObj,
+      attendance: attendanceWithIndex,
       attendancePercentage,
       totalPresent,
       totalAbsent,
@@ -161,78 +168,86 @@ const getSrmStudentsAttendanceFromDatabase = async (
   srmId: string,
   query: Record<string, unknown>,
 ) => {
-  const { getDhakaTimeRange } = await import('@/utils/dhakaTime.utils')
-  const QueryBuilder = (await import('@/builder/QueryBuilder')).default
-
   // Find students assigned to this SRM
   const assignedStudents = await Student.find({ assignedSrmId: srmId }).select(
-    'userId phone discordUsername',
+    'userId discordUsername',
   )
   const studentUserIds = assignedStudents.map((s) => s.userId)
 
   // Create lookup map
-  const profileMap = new Map(
-    assignedStudents.map((s) => [s.userId.toString(), s]),
+  const profileMap = new Map(assignedStudents.map((s) => [s.userId.toString(), s]))
+
+  // Get users for those student IDs
+  const students = await User.find({ _id: { $in: studentUserIds } }).select(
+    'name email phone role createdAt updatedAt',
   )
 
-  // Build query for those user IDs
-  const studentQuery = new QueryBuilder(
-    User.find({ _id: { $in: studentUserIds } }).select(
-      'name email phone role attendance createdAt updatedAt',
-    ),
-    query,
-  )
+  // Fetch all attendance records for these students
+  const allAttendance = await Attendance.find({ studentId: { $in: studentUserIds } }).sort({
+    date: -1,
+  })
 
-  // Apply search for student name and email
-  studentQuery.search(['name', 'email'])
+  // Group attendance by student
+  const attendanceMap = new Map<string, TAttendance[]>()
+  allAttendance.forEach((record) => {
+    const key = record.studentId.toString()
+    if (!attendanceMap.has(key)) {
+      attendanceMap.set(key, [])
+    }
+    attendanceMap.get(key)!.push(record.toObject() as TAttendance)
+  })
+
+  // Apply search filter if provided
+  let filteredStudents = students
+  const searchTerm = query.searchTerm as string | undefined
+  if (searchTerm) {
+    const searchRegex = new RegExp(searchTerm, 'i')
+    filteredStudents = filteredStudents.filter(
+      (s) => searchRegex.test(s.name || '') || searchRegex.test(s.email),
+    )
+  }
 
   // Apply absent filter if provided
-  studentQuery.filterAbsent(getDhakaTimeRange)
+  const absentFilter = query.absentFilter as TAbsentFilter | undefined
+  if (absentFilter) {
+    const filterDays = absentFilter === 'today' ? 1 : absentFilter === 'last2days' ? 2 : 3
+    const filterDate = new Date()
+    filterDate.setDate(filterDate.getDate() - filterDays + 1)
+    const { startOfDay: filterStart } = getDhakaTimeRange(filterDate)
 
-  // Execute query
-  const students = await studentQuery.modelQuery
+    filteredStudents = filteredStudents.filter((student) => {
+      const studentAttendance = attendanceMap.get(student._id.toString()) || []
+      const recentRecords = studentAttendance.filter((a) => new Date(a.date) >= filterStart)
+      return recentRecords.length === 0 || recentRecords.every((a) => a.status === 'ABSENT')
+    })
+  }
 
   // Map attendance records to include their index and calculate percentage
-  const result = students.map((student) => {
+  const result = filteredStudents.map((student) => {
     const studentObj = student.toObject() as any
     const profile = profileMap.get(studentObj._id.toString())
+    const attendance = attendanceMap.get(studentObj._id.toString()) || []
 
     if (profile) {
-      studentObj.phone = profile.phone
       studentObj.discordUsername = profile.discordUsername
     }
 
-    // Calculate attendance percentage
-    let totalPresent = 0
-    let totalAbsent = 0
-
-    if (studentObj.attendance) {
-      studentObj.attendance = studentObj.attendance.map(
-        (record: any, index: number) => {
-          // Count attendance status
-          if (record.status === 'ATTENDED') {
-            totalPresent++
-          } else if (record.status === 'ABSENT') {
-            totalAbsent++
-          }
-
-          return {
-            ...record,
-            attendanceIndex: index, // Add index to each record
-          }
-        },
-      )
-    }
-
-    // Calculate attendance percentage
+    // Calculate attendance stats
+    const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
+    const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
     const totalAttendance = totalPresent + totalAbsent
     const attendancePercentage =
-      totalAttendance > 0
-        ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
-        : 0
+      totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
+
+    // Add index to each attendance record
+    const attendanceWithIndex = attendance.map((record, index) => ({
+      ...record,
+      attendanceIndex: index,
+    }))
 
     return {
       ...studentObj,
+      attendance: attendanceWithIndex,
       attendancePercentage,
       totalPresent,
       totalAbsent,
@@ -243,53 +258,36 @@ const getSrmStudentsAttendanceFromDatabase = async (
 }
 
 const getAttendanceByIdFromDatabase = async (id: string) => {
-  // Get specific student with attendance
-  const student = await User.findById(id).select(
-    'name email phone role attendance createdAt updatedAt',
-  )
+  // Get specific student
+  const student = await User.findById(id).select('name email phone role createdAt updatedAt')
   if (!student) {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
   }
 
   // Fetch student profile
-  const profile = await Student.findOne({ userId: id }).select(
-    'phone discordUsername',
-  )
+  const profile = await Student.findOne({ userId: id }).select('discordUsername')
 
-  // Map attendance records to include their index
+  // Fetch attendance records for this student
+  const attendance = await Attendance.find({ studentId: id }).sort({ date: -1 })
+
   const result = student.toObject() as any
 
   if (profile) {
-    result.phone = profile.phone
     result.discordUsername = profile.discordUsername
   }
 
   // Calculate total present and absent counts
-  let totalPresent = 0
-  let totalAbsent = 0
-
-  if (result.attendance) {
-    result.attendance = result.attendance.map((record: any, index: number) => {
-      // Count attendance status
-      if (record.status === 'ATTENDED') {
-        totalPresent++
-      } else if (record.status === 'ABSENT') {
-        totalAbsent++
-      }
-
-      return {
-        ...record,
-        attendanceIndex: index, // Add index to each record
-      }
-    })
-  }
-
-  // Calculate attendance percentage
+  const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
+  const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
   const totalAttendance = totalPresent + totalAbsent
   const attendancePercentage =
-    totalAttendance > 0
-      ? Number(((totalPresent / totalAttendance) * 100).toFixed(2))
-      : 0
+    totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
+
+  // Add index to each attendance record
+  result.attendance = attendance.map((record, index) => ({
+    ...record.toObject(),
+    attendanceIndex: index,
+  }))
 
   return {
     ...result,
@@ -299,59 +297,28 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
   }
 }
 
-const updateAttendanceInDatabase = async (
-  studentId: string,
-  attendanceIndex: number,
-  payload: Partial<TAttendance>,
-) => {
-  const student = await User.findById(studentId)
-  if (!student) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
-  }
-
-  if (!student.attendance || attendanceIndex >= student.attendance.length) {
+const updateAttendanceInDatabase = async (attendanceId: string, payload: Partial<TAttendance>) => {
+  const attendance = await Attendance.findById(attendanceId)
+  if (!attendance) {
     throw new AppError(httpStatus.NOT_FOUND, 'Attendance record not found')
   }
 
-  const updateFields: Record<string, any> = {}
-  Object.entries(payload).forEach(([key, value]) => {
-    if (value !== undefined) {
-      updateFields[`attendance.${attendanceIndex}.${key}`] = value
-    }
+  const result = await Attendance.findByIdAndUpdate(attendanceId, payload, {
+    new: true,
+    runValidators: true,
   })
-
-  const result = await User.findByIdAndUpdate(
-    studentId,
-    { $set: updateFields },
-    { new: true, runValidators: true },
-  ).select('name email phone role attendance createdAt updatedAt')
-
-  if (!result) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
-  }
 
   return result
 }
 
-const deleteAttendanceFromDatabase = async (
-  studentId: string,
-  attendanceIndex: number,
-) => {
-  // Remove specific attendance record from array
-  const student = await User.findById(studentId)
-
-  if (!student) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
-  }
-
-  if (!student.attendance || attendanceIndex >= student.attendance.length) {
+const deleteAttendanceFromDatabase = async (attendanceId: string) => {
+  const attendance = await Attendance.findById(attendanceId)
+  if (!attendance) {
     throw new AppError(httpStatus.NOT_FOUND, 'Attendance record not found')
   }
 
-  student.attendance.splice(attendanceIndex, 1)
-  await student.save()
-
-  return student
+  await Attendance.findByIdAndDelete(attendanceId)
+  return { message: 'Attendance record deleted successfully' }
 }
 
 // Attendance Window Control Methods
@@ -368,7 +335,7 @@ const openAttendanceWindow = async (adminId: string, verificationCode?: string) 
   } else {
     windowStatus.isOpen = true
     windowStatus.verificationCode = verificationCode
-    windowStatus.openedBy = adminId
+    windowStatus.openedBy = adminId as any
     windowStatus.openedAt = new Date()
     windowStatus.closedAt = undefined
     await windowStatus.save()
@@ -406,11 +373,7 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
   const dateToMark = targetDate || new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   // Get Dhaka time range for the target date
-  const {
-    startOfDay,
-    endOfDay,
-    dhakaTime: currentDhakaTime,
-  } = getDhakaTimeRange(dateToMark)
+  const { startOfDay, endOfDay } = getDhakaTimeRange(dateToMark)
 
   // Prevent marking absent for future dates
   const now = getDhakaTimeRange()
@@ -421,49 +384,47 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
     )
   }
 
-  // Find all students
-  const allStudents = await User.find({ role: 'STUDENT' })
+  // Find all student user IDs
+  const allStudents = await User.find({ role: 'STUDENT' }).select('_id')
+  const allStudentIds = allStudents.map((s) => s._id)
+
+  // Find students who already have attendance for the target date
+  const studentsWithAttendance = await Attendance.find({
+    studentId: { $in: allStudentIds },
+    date: { $gte: startOfDay, $lte: endOfDay },
+  }).select('studentId')
+
+  const studentsWithAttendanceIds = new Set(
+    studentsWithAttendance.map((a) => a.studentId.toString()),
+  )
 
   // Filter students who don't have attendance for the target date
-  const studentsWithoutAttendance = allStudents.filter((student) => {
-    const hasAttendanceForDate = student.attendance?.some((record) => {
-      const recordDate = new Date(record.date)
-      return recordDate >= startOfDay && recordDate <= endOfDay
-    })
-    return !hasAttendanceForDate
-  })
+  const studentsWithoutAttendance = allStudentIds.filter(
+    (id) => !studentsWithAttendanceIds.has(id.toString()),
+  )
 
-  // Prepare bulk update operations
-  const bulkOps = studentsWithoutAttendance.map((student) => ({
-    updateOne: {
-      filter: { _id: student._id },
-      update: {
-        $push: {
-          attendance: {
-            status: 'ABSENT' as const,
-            mission: 0,
-            module: 0,
-            moduleVideo: 0,
-            date: startOfDay,
-          },
-        },
-      },
-    },
+  // Create absent attendance records
+  const absentRecords = studentsWithoutAttendance.map((studentId) => ({
+    studentId,
+    status: 'ABSENT' as const,
+    mission: 0,
+    module: 0,
+    moduleVideo: 0,
+    date: startOfDay,
   }))
 
-  // Execute bulk update if there are students to mark absent
+  // Insert all absent records
   let result = null
-  if (bulkOps.length > 0) {
-    result = await User.bulkWrite(bulkOps)
+  if (absentRecords.length > 0) {
+    result = await Attendance.insertMany(absentRecords)
   }
 
   return {
     totalStudents: allStudents.length,
-    studentsWithAttendance:
-      allStudents.length - studentsWithoutAttendance.length,
+    studentsWithAttendance: studentsWithAttendance.length,
     studentsMarkedAbsent: studentsWithoutAttendance.length,
     targetDate: startOfDay,
-    bulkWriteResult: result,
+    insertedCount: result ? result.length : 0,
   }
 }
 

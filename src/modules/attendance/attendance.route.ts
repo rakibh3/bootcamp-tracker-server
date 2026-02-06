@@ -6,56 +6,77 @@ import {
   updateAttendanceValidationSchema,
 } from './attendance.validation'
 import auth from '@/middlewares/auth'
+import { USER_ROLE } from '@/modules/user/user.constant'
 
 const router = express.Router()
 
 router.post(
   '/create-attendance',
-  auth('ADMIN', 'SUPER_ADMIN', 'SRM', 'STUDENT'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.STUDENT),
   validateRequest(createAttendanceValidationSchema),
   AttendanceController.createAttendance,
 )
-router.get('/get-attendance', auth('ADMIN'), AttendanceController.getAttendance)
+
+router.get(
+  '/get-attendance',
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
+  AttendanceController.getAttendance,
+)
+
 router.get(
   '/get-attendance/srm',
-  auth('SRM'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   AttendanceController.getSrmStudentsAttendance,
 )
+
 router.get(
   '/get-attendance/student',
-  auth('STUDENT'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM, USER_ROLE.STUDENT),
   AttendanceController.getStudentAttendance,
 )
-router.get('/get-attendance/:studentId', AttendanceController.getAttendanceById)
+
+router.get(
+  '/get-attendance/:studentId',
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM, USER_ROLE.STUDENT),
+  AttendanceController.getAttendanceById,
+)
 
 router.patch(
-  '/update-attendance/:studentId/:attendanceIndex',
+  '/update-attendance/:attendanceId',
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   validateRequest(updateAttendanceValidationSchema),
   AttendanceController.updateAttendance,
 )
+
 router.delete(
-  '/delete-attendance/:studentId/:attendanceIndex',
-  auth('ADMIN', 'SUPER_ADMIN'),
+  '/delete-attendance/:attendanceId',
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   AttendanceController.deleteAttendance,
 )
 
 // Attendance Window Control Routes
 router.post(
   '/open-window',
-  auth('ADMIN', 'SUPER_ADMIN'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   AttendanceController.openAttendanceWindow,
 )
+
 router.post(
   '/close-window',
-  auth('ADMIN', 'SUPER_ADMIN'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   AttendanceController.closeAttendanceWindow,
 )
-router.get('/window-status', AttendanceController.getAttendanceWindowStatus)
+
+router.get(
+  '/window-status',
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM, USER_ROLE.STUDENT),
+  AttendanceController.getAttendanceWindowStatus,
+)
 
 // Mark Absent Route (Admin Only)
 router.post(
   '/mark-absent',
-  auth('ADMIN', 'SUPER_ADMIN'),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   AttendanceController.markAbsent,
 )
 

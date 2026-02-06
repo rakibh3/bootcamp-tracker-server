@@ -31,14 +31,7 @@ class QueryBuilder<T> {
     const queryObj = { ...this.query }
 
     // Filtering
-    const excludeFields = [
-      'searchTerm',
-      'sort',
-      'limit',
-      'page',
-      'fields',
-      'absentFilter',
-    ]
+    const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'absentFilter']
     excludeFields.forEach((el) => delete queryObj[el])
 
     // Convert all string values to case-insensitive regex
@@ -77,8 +70,7 @@ class QueryBuilder<T> {
 
   // Fields limiting
   fields() {
-    const fields =
-      (this?.query?.fields as string)?.split(',')?.join(' ') || '-__v'
+    const fields = (this?.query?.fields as string)?.split(',')?.join(' ') || '-__v'
 
     this.modelQuery = this.modelQuery.select(fields)
     return this
@@ -94,10 +86,7 @@ class QueryBuilder<T> {
   ) {
     const absentFilter = this?.query?.absentFilter as string | undefined
 
-    if (
-      absentFilter &&
-      ['today', 'last2days', 'last3days'].includes(absentFilter)
-    ) {
+    if (absentFilter && ['today', 'last2days', 'last3days'].includes(absentFilter)) {
       const { startOfDay: todayStart, endOfDay: todayEnd } = getDhakaTimeRange()
 
       let startDate: Date

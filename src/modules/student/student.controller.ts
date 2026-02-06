@@ -88,7 +88,11 @@ const getStudentsByBatch = catchAsync(async (req, res) => {
 const updateStudentProgress = catchAsync(async (req, res) => {
   const { studentId } = req.params
   const { mission, module } = req.body
-  const result = await StudentServices.updateStudentProgressInDatabase(studentId as string, mission, module)
+  const result = await StudentServices.updateStudentProgressInDatabase(
+    studentId as string,
+    mission,
+    module,
+  )
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -8,14 +8,14 @@ const router = Router()
 
 router.post(
   '/auth/request-otp',
-  // otpRequestLimiter,
+  otpRequestLimiter,
   validateRequest(OTPValidation.requestOTPSchema),
   OTPControllers.requestOTP,
 )
 
 router.post(
   '/auth/verify-otp',
-  // otpVerifyLimiter,
+  otpVerifyLimiter,
   validateRequest(OTPValidation.verifyOTPSchema),
   OTPControllers.verifyOTP,
 )

@@ -15,10 +15,7 @@ const createTaskIntoDatabase = async (payload: TTask) => {
     })
 
     if (existingUpcomingTask) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        'Only one upcoming task can be assigned',
-      )
+      throw new AppError(httpStatus.BAD_REQUEST, 'Only one upcoming task can be assigned')
     }
   }
 
@@ -26,10 +23,7 @@ const createTaskIntoDatabase = async (payload: TTask) => {
   return result
 }
 
-const updateTaskInDatabase = async (
-  taskId: string,
-  payload: Partial<TTask>,
-) => {
+const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => {
   const { endOfDay } = getDhakaTimeRange()
 
   if (payload.dueDate) {
@@ -43,10 +37,7 @@ const updateTaskInDatabase = async (
       })
 
       if (existingUpcomingTask) {
-        throw new AppError(
-          httpStatus.BAD_REQUEST,
-          'Only one upcoming task can be assigned',
-        )
+        throw new AppError(httpStatus.BAD_REQUEST, 'Only one upcoming task can be assigned')
       }
     }
   }

@@ -1,11 +1,12 @@
 import { Types } from 'mongoose'
 
 export type TAttendance = {
-  studentID: Types.ObjectId
+  studentId: Types.ObjectId
   status: 'ATTENDED' | 'ABSENT'
   mission: number
   module: number
   moduleVideo: number
+  date: Date
   note?: string
   verificationCode?: string
 }

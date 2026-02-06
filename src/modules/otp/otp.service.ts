@@ -5,19 +5,13 @@ import emailQueue from '@/config/queue.config'
 import AppError from '@/error/AppError'
 import { User } from '@/modules/user/user.model'
 import { generateToken } from '@/helper/generateToken'
-import {
-  IOTPRequest,
-  IOTPVerify,
-  IOTPData,
-  IAuthResponse,
-} from './otp.interface'
+import { IOTPRequest, IOTPVerify, IOTPData, IAuthResponse } from './otp.interface'
 import { generateOTP, getOTPRedisKey } from '@/utils/otp.utils'
+import { JwtPayload } from 'jsonwebtoken'
 
 const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_MINUTES || 5) * 60
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5)
-const OTP_RESEND_COOLDOWN = Number(
-  process.env.OTP_RESEND_COOLDOWN_SECONDS || 60,
-)
+const OTP_RESEND_COOLDOWN = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS || 60)
 const OTP_MAX_RESEND = Number(process.env.OTP_MAX_RESEND_ATTEMPTS || 3)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as string
@@ -25,9 +19,7 @@ const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as string
 // Optimized bcrypt rounds for high throughput (lower = faster, but less secure)
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 8)
 
-const requestOTP = async (
-  payload: IOTPRequest,
-): Promise<{ message: string }> => {
+const requestOTP = async (payload: IOTPRequest): Promise<{ message: string }> => {
   const { email } = payload
 
   const user = await User.findOne({ email }).lean()
@@ -69,9 +61,7 @@ const requestOTP = async (
   const otpData: IOTPData = {
     hashedOTP,
     attempts: 0,
-    resendCount: existingData
-      ? JSON.parse(existingData as string).resendCount + 1
-      : 0,
+    resendCount: existingData ? JSON.parse(existingData as string).resendCount + 1 : 0,
     lastResendAt: Date.now(),
   }
 
@@ -144,11 +134,7 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
   if (!isOTPValid) {
     otpData.attempts += 1
     const ttl = await redisClient.ttl(otpKey)
-    await redisClient.setex(
-      otpKey,
-      ttl > 0 ? ttl : OTP_EXPIRY_SECONDS,
-      JSON.stringify(otpData),
-    )
+    await redisClient.setex(otpKey, ttl > 0 ? ttl : OTP_EXPIRY_SECONDS, JSON.stringify(otpData))
 
     const remainingAttempts = OTP_MAX_ATTEMPTS - otpData.attempts
     throw new AppError(
@@ -176,7 +162,7 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
     await redisClient.setex(userCacheKey, 3600, JSON.stringify(user))
   }
 
-  const tokenPayload = {
+  const tokenPayload: JwtPayload = {
     _id: user._id.toString(),
     email: user.email,
     role: user.role || 'STUDENT',

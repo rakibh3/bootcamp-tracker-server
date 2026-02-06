@@ -3,7 +3,7 @@ import { TAttendance } from './attendance.interface'
 
 const attendanceSchema = new Schema<TAttendance>(
   {
-    studentID: {
+    studentId: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: 'User',
@@ -25,6 +25,11 @@ const attendanceSchema = new Schema<TAttendance>(
       type: Number,
       required: true,
     },
+    date: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
     note: {
       type: String,
     },
@@ -34,5 +39,10 @@ const attendanceSchema = new Schema<TAttendance>(
     versionKey: false,
   },
 )
+
+// Indexes for efficient queries
+attendanceSchema.index({ studentId: 1, date: -1 })
+attendanceSchema.index({ date: 1 })
+attendanceSchema.index({ studentId: 1, date: 1 }, { unique: true }) // One attendance per student per day
 
 export const Attendance = model<TAttendance>('Attendance', attendanceSchema)

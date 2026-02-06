@@ -8,12 +8,7 @@ import { handleZodValidationError } from '@/error/zodError'
 import { handleCastValidationError } from './castError'
 import { handleDuplicateValidationError } from './duplicateError'
 
-export const globalErrorHandler: ErrorRequestHandler = (
-  error,
-  req,
-  res,
-  next,
-) => {
+export const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // Handle Zod Validation Error
   if (error instanceof ZodError) {
     const result = handleZodValidationError(error)

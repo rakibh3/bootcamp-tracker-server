@@ -60,7 +60,7 @@ export const EmailService = {
     senderConfig: { email: string; appPassword: string; name?: string },
     to: string,
     subject: string,
-    html: string
+    html: string,
   ): Promise<void> => {
     // Create a temporary transporter for this specific sender
     const transporter = nodemailer.createTransport({

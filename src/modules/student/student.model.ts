@@ -9,10 +9,6 @@ const studentSchema = new Schema<TStudent>(
       required: true,
       unique: true,
     },
-    phone: {
-      type: String,
-      required: true,
-    },
     discordUsername: {
       type: String,
       required: true,
@@ -34,10 +30,6 @@ const studentSchema = new Schema<TStudent>(
       type: String,
       enum: ['ACTIVE', 'INACTIVE'],
       default: 'ACTIVE',
-    },
-    totalAttendance: {
-      type: Number,
-      default: 0,
     },
     currentMission: {
       type: Number,

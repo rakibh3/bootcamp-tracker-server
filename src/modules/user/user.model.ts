@@ -1,40 +1,6 @@
 import { model, Schema } from 'mongoose'
 import { TUser, UserModel } from './user.interface'
 
-const attendanceRecordSchema = new Schema(
-  {
-    status: {
-      type: String,
-      enum: ['ATTENDED', 'ABSENT'],
-      default: 'ABSENT',
-    },
-    mission: {
-      type: Number,
-      required: true,
-    },
-    module: {
-      type: Number,
-      required: true,
-    },
-    moduleVideo: {
-      type: Number,
-      required: true,
-    },
-    date: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-    note: {
-      type: String,
-    },
-  },
-  {
-    timestamps: true,
-    _id: false,
-  },
-)
-
 const userSchema = new Schema<TUser, UserModel>(
   {
     name: {
@@ -55,10 +21,6 @@ const userSchema = new Schema<TUser, UserModel>(
       type: String,
       enum: ['STUDENT', 'ADMIN', 'SUPER_ADMIN', 'SRM'],
       default: 'STUDENT',
-    },
-    attendance: {
-      type: [attendanceRecordSchema],
-      default: [],
     },
     smtpConfig: {
       appPassword: {

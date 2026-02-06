@@ -12,9 +12,7 @@ const createCallHistoryIntoDatabase = async (payload: TCallHistory) => {
 const getAllCallHistoryFromDatabase = async (query: Record<string, unknown>) => {
   const searchableFields = ['notes']
   const callHistoryQuery = new QueryBuilder(
-    CallHistory.find()
-      .populate('student', 'name email phone')
-      .populate('calledBy', 'name email'),
+    CallHistory.find().populate('student', 'name email phone').populate('calledBy', 'name email'),
     query,
   )
     .search(searchableFields)
@@ -49,10 +47,7 @@ const getCallHistoryByStudentFromDatabase = async (studentId: string) => {
   return result
 }
 
-const updateCallHistoryInDatabase = async (
-  callId: string,
-  payload: Partial<TCallHistory>,
-) => {
+const updateCallHistoryInDatabase = async (callId: string, payload: Partial<TCallHistory>) => {
   const result = await CallHistory.findByIdAndUpdate(callId, payload, {
     new: true,
     runValidators: true,

@@ -11,7 +11,6 @@ export const createStudentValidationSchema = z.object({
 export const updateStudentValidationSchema = z.object({
   batchNumber: z.number().min(1, 'Batch number must be at least 1').optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
-  totalAttendance: z.number().min(0).optional(),
   currentMission: z.number().min(1).optional(),
   currentModule: z.number().min(1).optional(),
   notes: z.string().optional(),

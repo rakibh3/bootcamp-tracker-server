@@ -1,9 +1,6 @@
 import express from 'express'
 import { validateRequest } from '@/middlewares/validateRequest'
-import {
-  userRoleUpdateValidationSchema,
-  userValidationSchema,
-} from './user.validation'
+import { userRoleUpdateValidationSchema, userValidationSchema } from './user.validation'
 import { UserControllers } from './user.controller'
 import auth from '@/middlewares/auth'
 import { USER_ROLE } from './user.constant'
@@ -19,31 +16,23 @@ router.post(
 )
 
 // Route to get all users
-router.get(
-  '/users',
-  // auth(USER_ROLE.ADMIN),
-  UserControllers.getAllUsers,
-)
+router.get('/users', auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN), UserControllers.getAllUsers)
 
 // Route to update user role
 router.patch(
   '/user/:userId',
-  // auth(USER_ROLE.ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   validateRequest(userRoleUpdateValidationSchema),
   UserControllers.updateUserRole,
 )
 
 // Route to get all SRMs
-router.get(
-  '/users/srm',
-  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
-  UserControllers.getSRMs,
-)
+router.get('/users/srm', auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN), UserControllers.getSRMs)
 
 // Route to update SMTP config
 router.patch(
   '/users/smtp-config',
-  auth(USER_ROLE.SRM),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   UserControllers.updateSmtpConfig,
 )
 

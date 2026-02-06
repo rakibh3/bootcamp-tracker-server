@@ -31,8 +31,7 @@ const getAttendance = catchAsync(async (req, res) => {
 const getAttendanceById = catchAsync(async (req, res) => {
   const { studentId } = req.params
 
-  const result =
-    await AttendanceService.getAttendanceByIdFromDatabase(studentId as string)
+  const result = await AttendanceService.getAttendanceByIdFromDatabase(studentId as string)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -43,14 +42,10 @@ const getAttendanceById = catchAsync(async (req, res) => {
 })
 
 const updateAttendance = catchAsync(async (req, res) => {
-  const { studentId, attendanceIndex } = req.params
+  const { attendanceId } = req.params
   const { ...payload } = req.body
 
-  const result = await AttendanceService.updateAttendanceInDatabase(
-    studentId as string,
-    parseInt(Array.isArray(attendanceIndex) ? attendanceIndex[0] : attendanceIndex),
-    payload,
-  )
+  const result = await AttendanceService.updateAttendanceInDatabase(attendanceId as string, payload)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -61,12 +56,9 @@ const updateAttendance = catchAsync(async (req, res) => {
 })
 
 const deleteAttendance = catchAsync(async (req, res) => {
-  const { studentId, attendanceIndex } = req.params
+  const { attendanceId } = req.params
 
-  const result = await AttendanceService.deleteAttendanceFromDatabase(
-    studentId as string,
-    parseInt(Array.isArray(attendanceIndex) ? attendanceIndex[0] : attendanceIndex),
-  )
+  const result = await AttendanceService.deleteAttendanceFromDatabase(attendanceId as string)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -127,7 +119,7 @@ const markAbsent = catchAsync(async (req, res) => {
 })
 
 const getSrmStudentsAttendance = catchAsync(async (req, res) => {
-  const srmId = req.user._id || req.user.id // Try both _id and id
+  const srmId = req.user._id
   const result = await AttendanceService.getSrmStudentsAttendanceFromDatabase(srmId, req.query)
 
   sendResponse(res, {
@@ -140,8 +132,8 @@ const getSrmStudentsAttendance = catchAsync(async (req, res) => {
 
 // Get current student's attendance
 const getStudentAttendance = catchAsync(async (req, res) => {
-  const userId = req.user.id
-  const result = await AttendanceService.getAttendanceByIdFromDatabase(userId)
+  const userId = req.user._id
+  const result = await AttendanceService.getAttendanceByIdFromDatabase(userId as string)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

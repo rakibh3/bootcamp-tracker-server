@@ -12,7 +12,7 @@ const attendanceWindowSchema = new Schema<TAttendanceWindow>(
       type: String,
     },
     openedBy: {
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: 'User',
     },
     openedAt: {
@@ -28,7 +28,4 @@ const attendanceWindowSchema = new Schema<TAttendanceWindow>(
   },
 )
 
-export const AttendanceWindow = model<TAttendanceWindow>(
-  'AttendanceWindow',
-  attendanceWindowSchema,
-)
+export const AttendanceWindow = model<TAttendanceWindow>('AttendanceWindow', attendanceWindowSchema)

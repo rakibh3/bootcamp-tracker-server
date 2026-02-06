@@ -1,9 +1,6 @@
 import express from 'express'
 import { validateRequest } from '@/middlewares/validateRequest'
-import {
-  createStudentValidationSchema,
-  updateStudentValidationSchema,
-} from './student.validation'
+import { createStudentValidationSchema, updateStudentValidationSchema } from './student.validation'
 import { StudentControllers } from './student.controller'
 import auth from '@/middlewares/auth'
 import { USER_ROLE } from '../user/user.constant'
@@ -19,7 +16,11 @@ router.post(
 )
 
 // Route to get all students
-router.get('/students', auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM), StudentControllers.getAllStudents)
+router.get(
+  '/students',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM),
+  StudentControllers.getAllStudents,
+)
 
 // Route to assign students to SRM
 router.patch(
@@ -29,7 +30,11 @@ router.patch(
 )
 
 // Route to get student by ID
-router.get('/students/:studentId', auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM), StudentControllers.getStudentById)
+router.get(
+  '/students/:studentId',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM),
+  StudentControllers.getStudentById,
+)
 
 // Route to get student by user ID
 router.get('/students/user/:userId', StudentControllers.getStudentByUserId)

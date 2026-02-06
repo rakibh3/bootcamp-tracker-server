@@ -3,37 +3,20 @@ import { Student } from '../student/student.model'
 import { CallHistory } from '../call-history/call-history.model'
 import { User } from '../user/user.model'
 import { getDhakaTimeRange } from '@/utils/dhakaTime.utils'
-import {
-  TAttendanceStats,
-  TStudentStats,
-  TCallStats,
-  TDateRange,
-} from './analytics.interface'
+import { TAttendanceStats, TStudentStats, TCallStats, TDateRange } from './analytics.interface'
 
 const getAttendanceStatsFromDatabase = async (): Promise<TAttendanceStats> => {
   const { startOfDay, endOfDay } = getDhakaTimeRange()
 
-  const stats = await User.aggregate([
-    { $match: { role: 'STUDENT' } },
-    {
-      $facet: {
-        totalStudents: [{ $count: 'count' }],
-        presentToday: [
-          { $unwind: '$attendance' },
-          {
-            $match: {
-              'attendance.status': 'ATTENDED',
-              'attendance.date': { $gte: startOfDay, $lte: endOfDay },
-            },
-          },
-          { $count: 'count' },
-        ],
-      },
-    },
-  ])
+  // Count total students
+  const totalStudents = await User.countDocuments({ role: 'STUDENT' })
 
-  const totalStudents = stats[0]?.totalStudents[0]?.count || 0
-  const presentToday = stats[0]?.presentToday[0]?.count || 0
+  // Count students who attended today
+  const presentToday = await Attendance.countDocuments({
+    status: 'ATTENDED',
+    date: { $gte: startOfDay, $lte: endOfDay },
+  })
+
   const absentToday = totalStudents - presentToday
   const attendanceRate = totalStudents > 0 ? (presentToday / totalStudents) * 100 : 0
 
@@ -105,20 +88,27 @@ const getDashboardAnalyticsFromDatabase = async () => {
     getCallStatsFromDatabase(),
   ])
 
-  // Get recent activity (last 10 attendance records across all users)
-  const recentActivity = await User.aggregate([
-    { $match: { role: 'STUDENT' } },
-    { $unwind: '$attendance' },
-    { $sort: { 'attendance.date': -1 } },
+  // Get recent activity (last 10 attendance records) from Attendance collection
+  const recentActivity = await Attendance.aggregate([
+    { $sort: { date: -1 } },
     { $limit: 10 },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'studentId',
+        foreignField: '_id',
+        as: 'student',
+      },
+    },
+    { $unwind: '$student' },
     {
       $project: {
         _id: 0,
-        student: { _id: '$_id', name: '$name', email: '$email' },
-        status: '$attendance.status',
-        mission: '$attendance.mission',
-        module: '$attendance.module',
-        date: '$attendance.date',
+        student: { _id: '$student._id', name: '$student.name', email: '$student.email' },
+        status: 1,
+        mission: 1,
+        module: 1,
+        date: 1,
       },
     },
   ])
@@ -136,24 +126,22 @@ const getAttendanceTrendFromDatabase = async (days: number = 7) => {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const trend = await User.aggregate([
-    { $match: { role: 'STUDENT' } },
-    { $unwind: '$attendance' },
+  const trend = await Attendance.aggregate([
     {
       $match: {
-        'attendance.date': { $gte: startDate, $lte: endDate },
+        date: { $gte: startDate, $lte: endDate },
       },
     },
     {
       $group: {
         _id: {
-          $dateToString: { format: '%Y-%m-%d', date: '$attendance.date' },
+          $dateToString: { format: '%Y-%m-%d', date: '$date' },
         },
         present: {
-          $sum: { $cond: [{ $eq: ['$attendance.status', 'ATTENDED'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ['$status', 'ATTENDED'] }, 1, 0] },
         },
         absent: {
-          $sum: { $cond: [{ $eq: ['$attendance.status', 'ABSENT'] }, 1, 0] },
+          $sum: { $cond: [{ $eq: ['$status', 'ABSENT'] }, 1, 0] },
         },
         total: { $sum: 1 },
       },
@@ -173,7 +161,6 @@ const getBatchWiseStatsFromDatabase = async () => {
         activeStudents: {
           $sum: { $cond: [{ $eq: ['$status', 'ACTIVE'] }, 1, 0] },
         },
-        avgAttendance: { $avg: '$totalAttendance' },
         avgCompletedModules: { $avg: '$completedModules' },
       },
     },
@@ -199,47 +186,54 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
       calledAt: { $gte: startOfWeek, $lte: endOfDay },
     }),
     Student.find({ assignedSrmId: srmId })
-      .populate('userId', 'name email phone discordUsername attendance')
+      .populate('userId', 'name email phone discordUsername')
       .lean(),
   ])
 
-  // Process students with their attendance from the user document
-  const studentsWithPerformance = assignedStudents.map((student: any) => {
-    const userAttendance = student.userId?.attendance || []
-    
-    // Sort and limit attendance records
-    const recentAttendance = [...userAttendance]
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10)
+  // Get attendance and call history for assigned students
+  const studentUserIds = assignedStudents.map((s: any) => s.userId?._id)
 
-    // Get call history for this student
-    // Note: We'll still need to query callHistory as it's a separate collection
-    return {
-      student, // Keep original student data
-      studentPromise: CallHistory.find({
+  // Fetch all attendance for these students
+  const allAttendance = await Attendance.find({
+    studentId: { $in: studentUserIds },
+  })
+    .sort({ date: -1 })
+    .lean()
+
+  // Group attendance by student
+  const attendanceMap = new Map()
+  allAttendance.forEach((record: any) => {
+    const key = record.studentId.toString()
+    if (!attendanceMap.has(key)) {
+      attendanceMap.set(key, [])
+    }
+    attendanceMap.get(key).push(record)
+  })
+
+  // Process students with their attendance
+  const resolvedStudents = await Promise.all(
+    assignedStudents.map(async (student: any) => {
+      const userId = student.userId?._id?.toString()
+      const studentAttendance = attendanceMap.get(userId) || []
+
+      // Get recent 10 attendance records
+      const recentAttendance = studentAttendance.slice(0, 10)
+
+      // Get call history for this student
+      const callHistory = await CallHistory.find({
         student: student.userId?._id,
         calledBy: srmId,
       })
         .sort({ calledAt: -1 })
         .limit(10)
-        .lean(),
-      recentAttendance,
-    }
-  })
+        .lean()
 
-  // Resolve call history for all students
-  const resolvedStudents = await Promise.all(
-    studentsWithPerformance.map(async ({ student, studentPromise, recentAttendance }) => {
-      const callHistory = await studentPromise
+      // Calculate attendance percentage
+      const attendedCount = studentAttendance.filter((a: any) => a.status === 'ATTENDED').length
+      const totalPossibleAttendance = studentAttendance.length
 
-      // Calculate attendance percentage from user record
-      const attendanceRecords = student.userId?.attendance || []
-      const attendedCount = attendanceRecords.filter((a: any) => a.status === 'ATTENDED').length
-      const totalPossibleAttendance = attendanceRecords.length
-      
-      const attendanceRate = totalPossibleAttendance > 0 
-        ? (attendedCount / totalPossibleAttendance) * 100 
-        : 100 // Default to 100 if no records yet
+      const attendanceRate =
+        totalPossibleAttendance > 0 ? (attendedCount / totalPossibleAttendance) * 100 : 100
 
       return {
         ...student,

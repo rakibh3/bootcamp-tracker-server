@@ -59,9 +59,7 @@ const getDashboardAnalytics = catchAsync(async (req, res) => {
 
 const getAttendanceTrend = catchAsync(async (req, res) => {
   const { days } = req.query
-  const result = await AnalyticsServices.getAttendanceTrendFromDatabase(
-    days ? Number(days) : 7,
-  )
+  const result = await AnalyticsServices.getAttendanceTrendFromDatabase(days ? Number(days) : 7)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
