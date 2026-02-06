@@ -1,36 +1,21 @@
 import eslint from '@eslint/js'
-import tseslint from '@typescript-eslint/eslint-plugin'
-import tsparser from '@typescript-eslint/parser'
+import tseslint from 'typescript-eslint'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
-export default [
+export default tseslint.config(
   eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ['src/**/*.ts'],
     languageOptions: {
-      parser: tsparser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         project: './tsconfig.json',
       },
-      globals: {
-        console: 'readonly',
-        process: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        Buffer: 'readonly',
-        setTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearTimeout: 'readonly',
-        clearInterval: 'readonly',
-      },
     },
     plugins: {
-      '@typescript-eslint': tseslint,
       'simple-import-sort': simpleImportSort,
     },
     rules: {
@@ -60,4 +45,4 @@ export default [
     ignores: ['dist/**', 'node_modules/**', '*.js', '*.mjs'],
   },
   eslintConfigPrettier,
-]
+)

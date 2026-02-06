@@ -1,6 +1,8 @@
 import Queue from 'bull'
-import redisClient from './redis.config'
+
 import {EmailService} from '@/modules/email/email.service'
+
+import redisClient from './redis.config'
 
 // Create email queue with Redis
 const emailQueue = new Queue('email-queue', {

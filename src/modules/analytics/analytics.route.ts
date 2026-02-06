@@ -1,4 +1,5 @@
 import express from 'express'
+
 import {AnalyticsControllers} from '@/modules/analytics/analytics.controller'
 
 const router = express.Router()
@@ -14,9 +15,6 @@ router.get('/analytics/attendance/trend', AnalyticsControllers.getAttendanceTren
 
 // Route to get student stats
 router.get('/analytics/students', AnalyticsControllers.getStudentStats)
-
-// Route to get batch-wise stats
-router.get('/analytics/batch', AnalyticsControllers.getBatchWiseStats)
 
 // Route to get call stats
 router.get('/analytics/calls', AnalyticsControllers.getCallStats)

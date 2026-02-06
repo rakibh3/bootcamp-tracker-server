@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
+
 import {EmailService} from '@/modules/email/email.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to send an OTP verification email

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
+
 import {TaskServices} from '@/modules/task/task.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to create a new educational task

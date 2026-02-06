@@ -1,4 +1,5 @@
 import {model, Schema} from 'mongoose'
+
 import {TAttendance} from './attendance.interface'
 
 const attendanceSchema = new Schema<TAttendance>(

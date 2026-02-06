@@ -1,14 +1,13 @@
-import cors from 'cors'
-import express, {Application, Request, Response} from 'express'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
 import compression from 'compression'
+import cors from 'cors'
+import dayjs from 'dayjs'
+import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
+import express, {Application, Request, Response} from 'express'
 import helmet from 'helmet'
 
-import {globalErrorHandler} from '@/error/globalErrorHandler'
-import {notFoundRoute} from '@/error/notFoundRoute'
-import {globalLimiter} from '@/middlewares/rateLimiter'
+import {globalErrorHandler, notFoundRoute} from '@/error'
+import {globalLimiter} from '@/middlewares'
 
 import router from './routes'
 

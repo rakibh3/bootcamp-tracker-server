@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
-import {User} from '../modules/user/user.model'
-import config from '../config'
+
+import config from '@/config'
+import {User} from '@/modules/user/user.model'
 
 // SRM = Student Relationship Manager
 const seedSRM = async () => {

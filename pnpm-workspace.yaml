@@ -1,4 +1,0 @@
-onlyBuiltDependencies:
-  - bcrypt
-  - msgpackr-extract
-  - unrs-resolver

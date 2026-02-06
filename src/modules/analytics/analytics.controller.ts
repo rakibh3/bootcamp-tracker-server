@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
+
 import {AnalyticsServices} from '@/modules/analytics/analytics.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to fetch overall attendance statistics
@@ -85,20 +85,6 @@ const getAttendanceTrend = catchAsync(async (req, res) => {
 })
 
 /**
- * Handles request to fetch statistics grouped by student batches
- */
-const getBatchWiseStats = catchAsync(async (req, res) => {
-  const result = await AnalyticsServices.getBatchWiseStatsFromDatabase()
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Batch-wise stats fetched successfully',
-    data: result,
-  })
-})
-
-/**
  * Handles request to fetch performance metrics for a specific SRM
  */
 const getSRMPerformance = catchAsync(async (req, res) => {
@@ -119,6 +105,5 @@ export const AnalyticsControllers = {
   getCallStats,
   getDashboardAnalytics,
   getAttendanceTrend,
-  getBatchWiseStats,
   getSRMPerformance,
 }

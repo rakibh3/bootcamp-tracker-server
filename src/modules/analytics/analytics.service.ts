@@ -1,14 +1,14 @@
-import {Attendance} from '@/modules/attendance/attendance.model'
-import {Student} from '@/modules/student/student.model'
-import {CallHistory} from '@/modules/call-history/call-history.model'
-import {User} from '@/modules/user/user.model'
-import {getDhakaTimeRange} from '@/utils/dhakaTime.utils'
 import {
   TAttendanceStats,
-  TStudentStats,
   TCallStats,
   TDateRange,
+  TStudentStats,
 } from '@/modules/analytics/analytics.interface'
+import {Attendance} from '@/modules/attendance/attendance.model'
+import {CallHistory} from '@/modules/call-history/call-history.model'
+import {Student} from '@/modules/student/student.model'
+import {User} from '@/modules/user/user.model'
+import {getDhakaTimeRange} from '@/utils'
 
 /**
  * Calculates student attendance statistics for the current day
@@ -169,27 +169,6 @@ const getAttendanceTrendFromDatabase = async (days: number = 7) => {
 }
 
 /**
- * Calculates aggregate statistics for students grouped by their batch number
- */
-const getBatchWiseStatsFromDatabase = async () => {
-  const stats = await Student.aggregate([
-    {
-      $group: {
-        _id: '$batchNumber',
-        totalStudents: {$sum: 1},
-        activeStudents: {
-          $sum: {$cond: [{$eq: ['$status', 'ACTIVE']}, 1, 0]},
-        },
-        avgCompletedModules: {$avg: '$completedModules'},
-      },
-    },
-    {$sort: {_id: 1}},
-  ])
-
-  return stats
-}
-
-/**
  * Analyzes performance metrics for an SRM, including their assigned students' activity
  */
 const getSRMPerformanceFromDatabase = async (srmId: string) => {
@@ -279,6 +258,5 @@ export const AnalyticsServices = {
   getCallStatsFromDatabase,
   getDashboardAnalyticsFromDatabase,
   getAttendanceTrendFromDatabase,
-  getBatchWiseStatsFromDatabase,
   getSRMPerformanceFromDatabase,
 }

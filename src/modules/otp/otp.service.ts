@@ -1,13 +1,14 @@
 import bcrypt from 'bcrypt'
 import httpStatus from 'http-status'
-import redisClient from '@/config/redis.config'
-import emailQueue from '@/config/queue.config'
-import AppError from '@/error/AppError'
-import {User} from '@/modules/user/user.model'
-import {generateToken} from '@/helper/generateToken'
-import {IOTPRequest, IOTPVerify, IOTPData, IAuthResponse} from '@/modules/otp/otp.interface'
-import {generateOTP, getOTPRedisKey} from '@/utils/otp.utils'
 import {JwtPayload} from 'jsonwebtoken'
+
+import emailQueue from '@/config/queue.config'
+import redisClient from '@/config/redis.config'
+import {AppError} from '@/error'
+import {generateToken} from '@/helper'
+import {IAuthResponse, IOTPData, IOTPRequest, IOTPVerify} from '@/modules/otp/otp.interface'
+import {User} from '@/modules/user/user.model'
+import {generateOTP, getOTPRedisKey} from '@/utils'
 
 const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_MINUTES || 5) * 60
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5)

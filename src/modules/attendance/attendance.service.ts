@@ -1,12 +1,18 @@
-import AppError from '@/error/AppError'
-import {TAbsentFilter, TAttendance} from '@/modules/attendance/attendance.interface'
 import httpStatus from 'http-status'
-import {User} from '@/modules/user/user.model'
-import {AttendanceWindow} from '@/modules/attendance/attendance-window.model'
-import {getDhakaTimeRange} from '@/utils/dhakaTime.utils'
-import {Student} from '@/modules/student/student.model'
+
+import {AppError} from '@/error'
+import {TAbsentFilter, TAttendance} from '@/modules/attendance/attendance.interface'
 import {Attendance} from '@/modules/attendance/attendance.model'
-import QueryBuilder from '@/builder/QueryBuilder'
+import {AttendanceWindow} from '@/modules/attendance/attendance-window.model'
+import {Student} from '@/modules/student/student.model'
+import {User} from '@/modules/user/user.model'
+import {
+  buildAttendanceMap,
+  calculateAttendanceStats,
+  filterByAbsentFilter,
+  filterBySearchTerm,
+  getDhakaTimeRange,
+} from '@/utils'
 
 /**
  * Creates a student attendance record after verifying
@@ -87,38 +93,14 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
     date: -1,
   })
 
-  const attendanceMap = new Map<string, TAttendance[]>()
-  allAttendance.forEach((record) => {
-    const key = record.studentId.toString()
-    if (!attendanceMap.has(key)) {
-      attendanceMap.set(key, [])
-    }
-    attendanceMap.get(key)!.push(record.toObject() as TAttendance)
-  })
+  const attendanceMap = buildAttendanceMap(allAttendance)
 
-  let filteredStudents = students
-  const absentFilter = query.absentFilter as TAbsentFilter | undefined
-
-  if (absentFilter) {
-    const filterDays = absentFilter === 'today' ? 1 : absentFilter === 'last2days' ? 2 : 3
-    const filterDate = new Date()
-    filterDate.setDate(filterDate.getDate() - filterDays + 1)
-    const {startOfDay: filterStart} = getDhakaTimeRange(filterDate)
-
-    filteredStudents = students.filter((student) => {
-      const studentAttendance = attendanceMap.get(student._id.toString()) || []
-      const recentRecords = studentAttendance.filter((a) => new Date(a.date) >= filterStart)
-      return recentRecords.length === 0 || recentRecords.every((a) => a.status === 'ABSENT')
-    })
-  }
-
-  const searchTerm = query.searchTerm as string | undefined
-  if (searchTerm) {
-    const searchRegex = new RegExp(searchTerm, 'i')
-    filteredStudents = filteredStudents.filter(
-      (s) => searchRegex.test(s.name || '') || searchRegex.test(s.email),
-    )
-  }
+  let filteredStudents = filterBySearchTerm(students, query.searchTerm as string | undefined)
+  filteredStudents = filterByAbsentFilter(
+    filteredStudents,
+    attendanceMap,
+    query.absentFilter as TAbsentFilter | undefined,
+  )
 
   const result = filteredStudents.map((student) => {
     const studentObj = student.toObject() as any
@@ -130,23 +112,14 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
       studentObj.assignedSrmId = profile.assignedSrmId
     }
 
-    const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
-    const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
-    const totalAttendance = totalPresent + totalAbsent
-    const attendancePercentage =
-      totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
-
-    const attendanceWithIndex = attendance.map((record, index) => ({
-      ...record,
-      attendanceIndex: index,
-    }))
+    const stats = calculateAttendanceStats(attendance)
 
     return {
       ...studentObj,
-      attendance: attendanceWithIndex,
-      attendancePercentage,
-      totalPresent,
-      totalAbsent,
+      attendance: stats.attendanceWithIndex,
+      attendancePercentage: stats.attendancePercentage,
+      totalPresent: stats.totalPresent,
+      totalAbsent: stats.totalAbsent,
     }
   })
 
@@ -165,7 +138,6 @@ const getSrmStudentsAttendanceFromDatabase = async (
     'userId discordUsername',
   )
   const studentUserIds = assignedStudents.map((s) => s.userId)
-
   const profileMap = new Map(assignedStudents.map((s) => [s.userId.toString(), s]))
 
   const students = await User.find({_id: {$in: studentUserIds}}).select(
@@ -176,37 +148,14 @@ const getSrmStudentsAttendanceFromDatabase = async (
     date: -1,
   })
 
-  const attendanceMap = new Map<string, TAttendance[]>()
-  allAttendance.forEach((record) => {
-    const key = record.studentId.toString()
-    if (!attendanceMap.has(key)) {
-      attendanceMap.set(key, [])
-    }
-    attendanceMap.get(key)!.push(record.toObject() as TAttendance)
-  })
+  const attendanceMap = buildAttendanceMap(allAttendance)
 
-  let filteredStudents = students
-  const searchTerm = query.searchTerm as string | undefined
-  if (searchTerm) {
-    const searchRegex = new RegExp(searchTerm, 'i')
-    filteredStudents = filteredStudents.filter(
-      (s) => searchRegex.test(s.name || '') || searchRegex.test(s.email),
-    )
-  }
-
-  const absentFilter = query.absentFilter as TAbsentFilter | undefined
-  if (absentFilter) {
-    const filterDays = absentFilter === 'today' ? 1 : absentFilter === 'last2days' ? 2 : 3
-    const filterDate = new Date()
-    filterDate.setDate(filterDate.getDate() - filterDays + 1)
-    const {startOfDay: filterStart} = getDhakaTimeRange(filterDate)
-
-    filteredStudents = filteredStudents.filter((student) => {
-      const studentAttendance = attendanceMap.get(student._id.toString()) || []
-      const recentRecords = studentAttendance.filter((a) => new Date(a.date) >= filterStart)
-      return recentRecords.length === 0 || recentRecords.every((a) => a.status === 'ABSENT')
-    })
-  }
+  let filteredStudents = filterBySearchTerm(students, query.searchTerm as string | undefined)
+  filteredStudents = filterByAbsentFilter(
+    filteredStudents,
+    attendanceMap,
+    query.absentFilter as TAbsentFilter | undefined,
+  )
 
   const result = filteredStudents.map((student) => {
     const studentObj = student.toObject() as any
@@ -217,23 +166,14 @@ const getSrmStudentsAttendanceFromDatabase = async (
       studentObj.discordUsername = profile.discordUsername
     }
 
-    const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
-    const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
-    const totalAttendance = totalPresent + totalAbsent
-    const attendancePercentage =
-      totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
-
-    const attendanceWithIndex = attendance.map((record, index) => ({
-      ...record,
-      attendanceIndex: index,
-    }))
+    const stats = calculateAttendanceStats(attendance)
 
     return {
       ...studentObj,
-      attendance: attendanceWithIndex,
-      attendancePercentage,
-      totalPresent,
-      totalAbsent,
+      attendance: stats.attendanceWithIndex,
+      attendancePercentage: stats.attendancePercentage,
+      totalPresent: stats.totalPresent,
+      totalAbsent: stats.totalAbsent,
     }
   })
 

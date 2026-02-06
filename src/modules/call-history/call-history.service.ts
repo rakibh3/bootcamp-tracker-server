@@ -1,8 +1,9 @@
 import httpStatus from 'http-status'
-import AppError from '@/error/AppError'
+
+import {QueryBuilder} from '@/builder'
+import {AppError} from '@/error'
 import {TCallHistory} from '@/modules/call-history/call-history.interface'
 import {CallHistory} from '@/modules/call-history/call-history.model'
-import QueryBuilder from '@/builder/QueryBuilder'
 
 /**
  * Persists a new call record between an SRM and a student.

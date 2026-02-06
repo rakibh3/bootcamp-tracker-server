@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
+
 import {StudentServices} from '@/modules/student/student.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to create a new student record
@@ -92,21 +92,6 @@ const deleteStudent = catchAsync(async (req, res) => {
 })
 
 /**
- * Handles request to fetch students filtered by their batch number
- */
-const getStudentsByBatch = catchAsync(async (req, res) => {
-  const {batchNumber} = req.params
-  const result = await StudentServices.getStudentsByBatchFromDatabase(Number(batchNumber))
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Students fetched successfully',
-    data: result,
-  })
-})
-
-/**
  * Handles request to update a student's educational progress
  */
 const updateStudentProgress = catchAsync(async (req, res) => {
@@ -148,7 +133,6 @@ export const StudentControllers = {
   getStudentByUserId,
   updateStudent,
   deleteStudent,
-  getStudentsByBatch,
   updateStudentProgress,
   assignStudentsToSRM,
 }

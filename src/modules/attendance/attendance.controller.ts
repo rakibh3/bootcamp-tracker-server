@@ -1,7 +1,7 @@
-import {sendResponse} from '@/utils/sendResponse'
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
+
 import {AttendanceService} from '@/modules/attendance/attendance.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to create a new attendance record

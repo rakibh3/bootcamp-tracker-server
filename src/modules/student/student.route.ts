@@ -1,9 +1,12 @@
 import express from 'express'
-import {validateRequest} from '@/middlewares/validateRequest'
-import {createStudentValidationSchema, updateStudentValidationSchema} from './student.validation'
-import {StudentControllers} from './student.controller'
-import auth from '@/middlewares/auth'
-import {USER_ROLE} from '../user/user.constant'
+
+import {auth, validateRequest} from '@/middlewares'
+import {StudentControllers} from '@/modules/student/student.controller'
+import {
+  createStudentValidationSchema,
+  updateStudentValidationSchema,
+} from '@/modules/student/student.validation'
+import {USER_ROLE} from '@/modules/user/user.constant'
 
 const router = express.Router()
 
@@ -38,9 +41,6 @@ router.get(
 
 // Route to get student by user ID
 router.get('/students/user/:userId', StudentControllers.getStudentByUserId)
-
-// Route to get students by batch
-router.get('/students/batch/:batchNumber', StudentControllers.getStudentsByBatch)
 
 // Route to update student
 router.patch(

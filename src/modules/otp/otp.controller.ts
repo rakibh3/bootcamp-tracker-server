@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
+
 import {OTPService} from '@/modules/otp/otp.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to generate and send a new OTP to user email

@@ -1,9 +1,10 @@
 import httpStatus from 'http-status'
-import AppError from '@/error/AppError'
+
+import {QueryBuilder} from '@/builder'
+import {AppError} from '@/error'
 import {TStudent} from '@/modules/student/student.interface'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
-import QueryBuilder from '@/builder/QueryBuilder'
 
 /**
  * Initializes a new student profile for an existing user
@@ -89,14 +90,6 @@ const deleteStudentFromDatabase = async (studentId: string) => {
 }
 
 /**
- * Retrieves all students belonging to a specific batch
- */
-const getStudentsByBatchFromDatabase = async (batchNumber: number) => {
-  const result = await Student.find({batchNumber}).populate('userId', 'name email phone')
-  return result
-}
-
-/**
  * Updates a student's progress tracking (current mission and module)
  */
 const updateStudentProgressInDatabase = async (
@@ -149,7 +142,6 @@ export const StudentServices = {
   getStudentByUserIdFromDatabase,
   updateStudentInDatabase,
   deleteStudentFromDatabase,
-  getStudentsByBatchFromDatabase,
   updateStudentProgressInDatabase,
   assignStudentsToSRMInDatabase,
 }

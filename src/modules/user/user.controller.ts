@@ -1,8 +1,8 @@
 import httpStatus from 'http-status'
-import {catchAsync} from '@/utils/catchAsync'
-import {sendResponse} from '@/utils/sendResponse'
-import {UserServices} from '@/modules/user/user.service'
+
 import {USER_ROLE} from '@/modules/user/user.constant'
+import {UserServices} from '@/modules/user/user.service'
+import {catchAsync, sendResponse} from '@/utils'
 
 /**
  * Handles request to register a new user in the system

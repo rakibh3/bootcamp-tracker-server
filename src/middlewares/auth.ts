@@ -3,11 +3,10 @@ import httpStatus from 'http-status'
 import jwt, {JwtPayload} from 'jsonwebtoken'
 
 import config from '@/config'
-import AppError from '@/error/AppError'
-import {unauthorizedErrorResponse} from '@/error/unauthorizeError'
-import {catchAsync} from '@/utils/catchAsync'
+import {AppError, unauthorizedErrorResponse} from '@/error'
 import {TUserRole} from '@/modules/user/user.interface'
 import {User} from '@/modules/user/user.model'
+import {catchAsync} from '@/utils'
 
 const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {

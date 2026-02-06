@@ -1,9 +1,12 @@
 import express from 'express'
-import {validateRequest} from '@/middlewares/validateRequest'
-import {createTaskValidationSchema, updateTaskValidationSchema} from './task.validation'
-import {TaskControllers} from './task.controller'
-import auth from '@/middlewares/auth'
-import {USER_ROLE} from '../user/user.constant'
+
+import {auth, validateRequest} from '@/middlewares'
+import {TaskControllers} from '@/modules/task/task.controller'
+import {
+  createTaskValidationSchema,
+  updateTaskValidationSchema,
+} from '@/modules/task/task.validation'
+import {USER_ROLE} from '@/modules/user/user.constant'
 
 const router = express.Router()
 

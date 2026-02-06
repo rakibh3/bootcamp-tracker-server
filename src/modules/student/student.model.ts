@@ -1,4 +1,5 @@
 import {model, Schema} from 'mongoose'
+
 import {TStudent} from './student.interface'
 
 const studentSchema = new Schema<TStudent>(
@@ -13,10 +14,6 @@ const studentSchema = new Schema<TStudent>(
       type: String,
       required: true,
     },
-    // batchNumber: {
-    //   type: Number,
-    //   required: true,
-    // },
     enrollmentDate: {
       type: Date,
       required: true,

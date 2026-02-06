@@ -1,5 +1,6 @@
 import httpStatus from 'http-status'
-import AppError from '@/error/AppError'
+
+import {AppError} from '@/error'
 import {Attendance} from '@/modules/attendance/attendance.model'
 import {TUser} from '@/modules/user/user.interface'
 import {User} from '@/modules/user/user.model'

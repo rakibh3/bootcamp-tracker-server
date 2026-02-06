@@ -1,8 +1,8 @@
 import {Router} from 'express'
-import {OTPControllers} from './otp.controller'
-import {OTPValidation} from './otp.validation'
-import {validateRequest} from '@/middlewares/validateRequest'
-import {otpRequestLimiter, otpVerifyLimiter} from '@/middlewares/rateLimiter'
+
+import {otpRequestLimiter, otpVerifyLimiter, validateRequest} from '@/middlewares'
+import {OTPControllers} from '@/modules/otp/otp.controller'
+import {OTPValidation} from '@/modules/otp/otp.validation'
 
 const router = Router()
 

@@ -1,10 +1,11 @@
 import express from 'express'
-import {validateRequest} from '@/middlewares/validateRequest'
+
+import {validateRequest} from '@/middlewares'
+import {CallHistoryControllers} from '@/modules/call-history/call-history.controller'
 import {
   createCallHistoryValidationSchema,
   updateCallHistoryValidationSchema,
-} from './call-history.validation'
-import {CallHistoryControllers} from './call-history.controller'
+} from '@/modules/call-history/call-history.validation'
 
 const router = express.Router()
 

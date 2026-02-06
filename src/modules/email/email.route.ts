@@ -1,5 +1,6 @@
 import express from 'express'
-import {EmailControllers} from './email.controller'
+
+import {EmailControllers} from '@/modules/email/email.controller'
 
 const router = express.Router()
 

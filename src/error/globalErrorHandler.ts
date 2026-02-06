@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-unused-vars */
+
 import {ErrorRequestHandler} from 'express'
 import httpStatus from 'http-status'
 import {ZodError} from 'zod'
 
 import {handleZodValidationError} from '@/error/zodError'
+
 import {handleCastValidationError} from './castError'
 import {handleDuplicateValidationError} from './duplicateError'
 

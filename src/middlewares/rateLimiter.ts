@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit'
 import RedisStore from 'rate-limit-redis'
+
 import redisClient from '@/config/redis.config'
 
 // Global rate limiter - 100 requests per minute per IP
@@ -10,7 +11,7 @@ export const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    // @ts-ignore - ioredis uses sendCommand
+    // @ts-expect-error - ioredis uses sendCommand
     sendCommand: (...args: string[]) => redisClient.call(...args),
     prefix: 'rl:global:',
   }),
@@ -25,7 +26,7 @@ export const otpRequestLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   store: new RedisStore({
-    // @ts-ignore - ioredis uses sendCommand
+    // @ts-expect-error - ioredis uses sendCommand
     sendCommand: (...args: string[]) => redisClient.call(...args),
     prefix: 'rl:otp:request:',
   }),
@@ -40,7 +41,7 @@ export const otpVerifyLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true,
   store: new RedisStore({
-    // @ts-ignore - ioredis uses sendCommand
+    // @ts-expect-error - ioredis uses sendCommand
     sendCommand: (...args: string[]) => redisClient.call(...args),
     prefix: 'rl:otp:verify:',
   }),
@@ -54,7 +55,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    // @ts-ignore - ioredis uses sendCommand
+    // @ts-expect-error - ioredis uses sendCommand
     sendCommand: (...args: string[]) => redisClient.call(...args),
     prefix: 'rl:auth:',
   }),

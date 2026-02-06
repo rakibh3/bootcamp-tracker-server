@@ -90,7 +90,7 @@ class QueryBuilder<T> {
       const {startOfDay: todayStart, endOfDay: todayEnd} = getDhakaTimeRange()
 
       let startDate: Date
-      let endDate: Date = todayEnd
+      const endDate: Date = todayEnd
 
       switch (absentFilter) {
         case 'today':

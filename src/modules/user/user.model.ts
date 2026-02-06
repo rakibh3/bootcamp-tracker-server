@@ -1,4 +1,5 @@
 import {model, Schema} from 'mongoose'
+
 import {TUser, UserModel} from './user.interface'
 
 const userSchema = new Schema<TUser, UserModel>(

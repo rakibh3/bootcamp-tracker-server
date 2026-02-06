@@ -1,12 +1,13 @@
 import {Router} from 'express'
-import {OTPRoute} from '@/modules/otp/otp.route'
-import {UserRoute} from '@/modules/user/user.route'
-import {AttendanceRoute} from '@/modules/attendance/attendance.route'
-import {TaskRoute} from '@/modules/task/task.route'
-import {StudentRoute} from '@/modules/student/student.route'
-import {CallHistoryRoute} from '@/modules/call-history/call-history.route'
+
 import {AnalyticsRoute} from '@/modules/analytics/analytics.route'
+import {AttendanceRoute} from '@/modules/attendance/attendance.route'
+import {CallHistoryRoute} from '@/modules/call-history/call-history.route'
 import {EmailRoute} from '@/modules/email/email.route'
+import {OTPRoute} from '@/modules/otp/otp.route'
+import {StudentRoute} from '@/modules/student/student.route'
+import {TaskRoute} from '@/modules/task/task.route'
+import {UserRoute} from '@/modules/user/user.route'
 
 const router = Router()
 

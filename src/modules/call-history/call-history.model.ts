@@ -1,4 +1,5 @@
 import {model, Schema} from 'mongoose'
+
 import {TCallHistory} from './call-history.interface'
 
 const callHistorySchema = new Schema<TCallHistory>(

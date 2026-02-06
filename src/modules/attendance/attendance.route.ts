@@ -1,11 +1,11 @@
 import express from 'express'
-import {AttendanceController} from './attendance.controller'
-import {validateRequest} from '@/middlewares/validateRequest'
+
+import {auth, validateRequest} from '@/middlewares'
+import {AttendanceController} from '@/modules/attendance/attendance.controller'
 import {
   createAttendanceValidationSchema,
   updateAttendanceValidationSchema,
-} from './attendance.validation'
-import auth from '@/middlewares/auth'
+} from '@/modules/attendance/attendance.validation'
 import {USER_ROLE} from '@/modules/user/user.constant'
 
 const router = express.Router()

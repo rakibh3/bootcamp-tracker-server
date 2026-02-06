@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+
 import {TErrorResponse} from '../interface/error'
 
 export const handleCastValidationError = (error: mongoose.Error.CastError): TErrorResponse => {

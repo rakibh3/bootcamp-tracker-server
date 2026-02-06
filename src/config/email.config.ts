@@ -1,5 +1,5 @@
-import nodemailer, {Transporter} from 'nodemailer'
 import dotenv from 'dotenv'
+import nodemailer, {Transporter} from 'nodemailer'
 
 dotenv.config()
 
