@@ -1,8 +1,11 @@
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { sendResponse } from '@/utils/sendResponse'
-import { TaskServices } from './task.service'
+import {catchAsync} from '@/utils/catchAsync'
+import {sendResponse} from '@/utils/sendResponse'
+import {TaskServices} from '@/modules/task/task.service'
 
+/**
+ * Handles request to create a new educational task
+ */
 const createTask = catchAsync(async (req, res) => {
   const result = await TaskServices.createTaskIntoDatabase(req.body)
 
@@ -14,8 +17,11 @@ const createTask = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to update an existing task
+ */
 const updateTask = catchAsync(async (req, res) => {
-  const { taskId } = req.params
+  const {taskId} = req.params
   const result = await TaskServices.updateTaskInDatabase(taskId, req.body)
 
   sendResponse(res, {
@@ -26,6 +32,9 @@ const updateTask = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch the task assigned for the current day
+ */
 const getCurrentTask = catchAsync(async (req, res) => {
   const result = await TaskServices.getCurrentTaskFromDatabase()
 
@@ -37,6 +46,9 @@ const getCurrentTask = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch the next scheduled upcoming task
+ */
 const getUpcomingTask = catchAsync(async (req, res) => {
   const result = await TaskServices.getUpcomingTaskFromDatabase()
 
@@ -48,6 +60,9 @@ const getUpcomingTask = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to list all past due tasks
+ */
 const getDueTasks = catchAsync(async (req, res) => {
   const result = await TaskServices.getDueTasksFromDatabase()
 
@@ -59,8 +74,11 @@ const getDueTasks = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to delete a task record
+ */
 const deleteTask = catchAsync(async (req, res) => {
-  const { taskId } = req.params
+  const {taskId} = req.params
   const result = await TaskServices.deleteTaskFromDatabase(taskId)
 
   sendResponse(res, {

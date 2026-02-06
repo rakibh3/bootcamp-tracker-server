@@ -39,5 +39,5 @@ export const getDhakaTimeRange = (targetDate?: Date) => {
     999,
   )
 
-  return { startOfDay, endOfDay, dhakaTime }
+  return {startOfDay, endOfDay, dhakaTime}
 }

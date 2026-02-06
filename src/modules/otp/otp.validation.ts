@@ -1,9 +1,9 @@
-import { z } from 'zod'
+import {z} from 'zod'
 
 const requestOTPSchema = z.object({
   email: z
     .string({
-      required_error: 'Email is required',
+      message: 'Email is required',
     })
     .email({
       message: 'Invalid email format',
@@ -13,14 +13,14 @@ const requestOTPSchema = z.object({
 const verifyOTPSchema = z.object({
   email: z
     .string({
-      required_error: 'Email is required',
+      message: 'Email is required',
     })
     .email({
       message: 'Invalid email format',
     }),
   otp: z
     .string({
-      required_error: 'OTP is required',
+      message: 'OTP is required',
     })
     .length(6, {
       message: 'OTP must be 6 digits',

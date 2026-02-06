@@ -1,8 +1,11 @@
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { sendResponse } from '@/utils/sendResponse'
-import { AnalyticsServices } from './analytics.service'
+import {catchAsync} from '@/utils/catchAsync'
+import {sendResponse} from '@/utils/sendResponse'
+import {AnalyticsServices} from '@/modules/analytics/analytics.service'
 
+/**
+ * Handles request to fetch overall attendance statistics
+ */
 const getAttendanceStats = catchAsync(async (req, res) => {
   const result = await AnalyticsServices.getAttendanceStatsFromDatabase()
 
@@ -14,6 +17,9 @@ const getAttendanceStats = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch student status and distribution stats
+ */
 const getStudentStats = catchAsync(async (req, res) => {
   const result = await AnalyticsServices.getStudentStatsFromDatabase()
 
@@ -25,8 +31,11 @@ const getStudentStats = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch call interaction statistics with date filtering
+ */
 const getCallStats = catchAsync(async (req, res) => {
-  const { startDate, endDate } = req.query
+  const {startDate, endDate} = req.query
 
   let dateRange
   if (startDate && endDate) {
@@ -46,6 +55,9 @@ const getCallStats = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch a summary of dashboard analytics
+ */
 const getDashboardAnalytics = catchAsync(async (req, res) => {
   const result = await AnalyticsServices.getDashboardAnalyticsFromDatabase()
 
@@ -57,8 +69,11 @@ const getDashboardAnalytics = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch attendance trends over a period of time
+ */
 const getAttendanceTrend = catchAsync(async (req, res) => {
-  const { days } = req.query
+  const {days} = req.query
   const result = await AnalyticsServices.getAttendanceTrendFromDatabase(days ? Number(days) : 7)
 
   sendResponse(res, {
@@ -69,6 +84,9 @@ const getAttendanceTrend = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch statistics grouped by student batches
+ */
 const getBatchWiseStats = catchAsync(async (req, res) => {
   const result = await AnalyticsServices.getBatchWiseStatsFromDatabase()
 
@@ -80,8 +98,11 @@ const getBatchWiseStats = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch performance metrics for a specific SRM
+ */
 const getSRMPerformance = catchAsync(async (req, res) => {
-  const { srmId } = req.params
+  const {srmId} = req.params
   const result = await AnalyticsServices.getSRMPerformanceFromDatabase(srmId as string)
 
   sendResponse(res, {

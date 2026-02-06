@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { TErrorResponse } from '../interface/error'
+import {TErrorResponse} from '../interface/error'
 
 export const handleDuplicateValidationError = (error: any): TErrorResponse => {
   const statusCode = 409

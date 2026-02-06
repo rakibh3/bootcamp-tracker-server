@@ -1,5 +1,5 @@
-import { model, Schema } from 'mongoose'
-import { TAttendanceWindow } from './attendance-window.interface'
+import {model, Schema} from 'mongoose'
+import {TAttendanceWindow} from './attendance-window.interface'
 
 const attendanceWindowSchema = new Schema<TAttendanceWindow>(
   {

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { User } from '../modules/user/user.model'
+import {User} from '../modules/user/user.model'
 import config from '../config'
 
 // SRM = Student Relationship Manager
@@ -30,7 +30,7 @@ const seedSRM = async () => {
     ]
 
     for (const srmData of srmUsers) {
-      const existingSRM = await User.findOne({ email: srmData.email })
+      const existingSRM = await User.findOne({email: srmData.email})
 
       if (existingSRM) {
         console.log(`SRM user ${srmData.email} already exists`)

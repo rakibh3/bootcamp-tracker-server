@@ -1,13 +1,13 @@
-import { sendResponse } from '@/utils/sendResponse'
+import {sendResponse} from '@/utils/sendResponse'
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { AttendanceService } from './attendance.service'
-import { TAbsentFilter } from './attendance.interface'
+import {catchAsync} from '@/utils/catchAsync'
+import {AttendanceService} from '@/modules/attendance/attendance.service'
 
+/**
+ * Handles request to create a new attendance record
+ */
 const createAttendance = catchAsync(async (req, res) => {
-  const { ...payload } = req.body
-
-  const result = await AttendanceService.createAttendanceInDatabase(payload)
+  const result = await AttendanceService.createAttendanceInDatabase(req.body)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -17,6 +17,9 @@ const createAttendance = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch all attendance records with query filtering
+ */
 const getAttendance = catchAsync(async (req, res) => {
   const result = await AttendanceService.getAttendanceFromDatabase(req.query)
 
@@ -28,8 +31,11 @@ const getAttendance = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch attendance records for a specific student ID
+ */
 const getAttendanceById = catchAsync(async (req, res) => {
-  const { studentId } = req.params
+  const {studentId} = req.params
 
   const result = await AttendanceService.getAttendanceByIdFromDatabase(studentId as string)
 
@@ -41,11 +47,16 @@ const getAttendanceById = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to update an existing attendance record
+ */
 const updateAttendance = catchAsync(async (req, res) => {
-  const { attendanceId } = req.params
-  const { ...payload } = req.body
+  const {attendanceId} = req.params
 
-  const result = await AttendanceService.updateAttendanceInDatabase(attendanceId as string, payload)
+  const result = await AttendanceService.updateAttendanceInDatabase(
+    attendanceId as string,
+    req.body,
+  )
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -55,8 +66,11 @@ const updateAttendance = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to delete an attendance record
+ */
 const deleteAttendance = catchAsync(async (req, res) => {
-  const { attendanceId } = req.params
+  const {attendanceId} = req.params
 
   const result = await AttendanceService.deleteAttendanceFromDatabase(attendanceId as string)
 
@@ -68,9 +82,11 @@ const deleteAttendance = catchAsync(async (req, res) => {
   })
 })
 
-// Attendance Window Controllers
+/**
+ * Handles request to open the attendance window for students
+ */
 const openAttendanceWindow = catchAsync(async (req, res) => {
-  const adminId = req.user?.id || req.body.adminId // Assuming user is attached by auth middleware
+  const adminId = req.user?._id
 
   const result = await AttendanceService.openAttendanceWindow(adminId)
 
@@ -82,6 +98,9 @@ const openAttendanceWindow = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to close the attendance window
+ */
 const closeAttendanceWindow = catchAsync(async (req, res) => {
   const result = await AttendanceService.closeAttendanceWindow()
 
@@ -93,6 +112,9 @@ const closeAttendanceWindow = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to check the current status of the attendance window
+ */
 const getAttendanceWindowStatus = catchAsync(async (req, res) => {
   const result = await AttendanceService.getAttendanceWindowStatus()
 
@@ -104,8 +126,11 @@ const getAttendanceWindowStatus = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to mark all non-attending students as absent for a date
+ */
 const markAbsent = catchAsync(async (req, res) => {
-  const { date } = req.body
+  const {date} = req.body
   const targetDate = date ? new Date(date) : undefined
 
   const result = await AttendanceService.markUsersAbsentForDate(targetDate)
@@ -118,6 +143,9 @@ const markAbsent = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch attendance for students assigned to the calling SRM
+ */
 const getSrmStudentsAttendance = catchAsync(async (req, res) => {
   const srmId = req.user._id
   const result = await AttendanceService.getSrmStudentsAttendanceFromDatabase(srmId, req.query)
@@ -130,7 +158,9 @@ const getSrmStudentsAttendance = catchAsync(async (req, res) => {
   })
 })
 
-// Get current student's attendance
+/**
+ * Handles request for a student to fetch their own attendance records
+ */
 const getStudentAttendance = catchAsync(async (req, res) => {
   const userId = req.user._id
   const result = await AttendanceService.getAttendanceByIdFromDatabase(userId as string)

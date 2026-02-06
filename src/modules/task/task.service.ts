@@ -1,17 +1,19 @@
 import httpStatus from 'http-status'
 import AppError from '@/error/AppError'
-import { TTask } from './task.interface'
-import { Task } from './task.model'
-import { getDhakaTimeRange } from '@/utils/dhakaTime.utils'
+import {TTask} from '@/modules/task/task.interface'
+import {Task} from '@/modules/task/task.model'
+import {getDhakaTimeRange} from '@/utils/dhakaTime.utils'
 
+/**
+ * Creates a new task and enforces a single upcoming task policy.
+ */
 const createTaskIntoDatabase = async (payload: TTask) => {
-  const { startOfDay, endOfDay } = getDhakaTimeRange()
+  const {endOfDay} = getDhakaTimeRange()
   const taskDate = new Date(payload.dueDate)
 
-  // Check if it's an upcoming task (dueDate > today)
   if (taskDate > endOfDay) {
     const existingUpcomingTask = await Task.findOne({
-      dueDate: { $gt: endOfDay },
+      dueDate: {$gt: endOfDay},
     })
 
     if (existingUpcomingTask) {
@@ -23,17 +25,19 @@ const createTaskIntoDatabase = async (payload: TTask) => {
   return result
 }
 
+/**
+ * Updates an existing task and validates upcoming task constraints.
+ */
 const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => {
-  const { endOfDay } = getDhakaTimeRange()
+  const {endOfDay} = getDhakaTimeRange()
 
   if (payload.dueDate) {
     const taskDate = new Date(payload.dueDate)
 
-    // If updating to an upcoming task, check constraint
     if (taskDate > endOfDay) {
       const existingUpcomingTask = await Task.findOne({
-        _id: { $ne: taskId },
-        dueDate: { $gt: endOfDay },
+        _id: {$ne: taskId},
+        dueDate: {$gt: endOfDay},
       })
 
       if (existingUpcomingTask) {
@@ -54,8 +58,11 @@ const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => 
   return result
 }
 
+/**
+ * Fetches the task assigned for the current calendar day.
+ */
 const getCurrentTaskFromDatabase = async () => {
-  const { startOfDay, endOfDay } = getDhakaTimeRange()
+  const {startOfDay, endOfDay} = getDhakaTimeRange()
 
   const result = await Task.findOne({
     dueDate: {
@@ -67,26 +74,35 @@ const getCurrentTaskFromDatabase = async () => {
   return result
 }
 
+/**
+ * Retrieves information about the next scheduled task.
+ */
 const getUpcomingTaskFromDatabase = async () => {
-  const { endOfDay } = getDhakaTimeRange()
+  const {endOfDay} = getDhakaTimeRange()
 
   const result = await Task.findOne({
-    dueDate: { $gt: endOfDay },
+    dueDate: {$gt: endOfDay},
   })
 
   return result
 }
 
+/**
+ * Lists all tasks that are past their due date.
+ */
 const getDueTasksFromDatabase = async () => {
-  const { startOfDay } = getDhakaTimeRange()
+  const {startOfDay} = getDhakaTimeRange()
 
   const result = await Task.find({
-    dueDate: { $lt: startOfDay },
-  }).sort({ dueDate: -1 })
+    dueDate: {$lt: startOfDay},
+  }).sort({dueDate: -1})
 
   return result
 }
 
+/**
+ * Deletes a task record from the database.
+ */
 const deleteTaskFromDatabase = async (taskId: string) => {
   const result = await Task.findByIdAndDelete(taskId)
   if (!result) {

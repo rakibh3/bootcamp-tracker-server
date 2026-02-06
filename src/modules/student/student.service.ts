@@ -1,12 +1,15 @@
 import httpStatus from 'http-status'
 import AppError from '@/error/AppError'
-import { TStudent } from './student.interface'
-import { Student } from './student.model'
-import { User } from '../user/user.model'
+import {TStudent} from '@/modules/student/student.interface'
+import {Student} from '@/modules/student/student.model'
+import {User} from '@/modules/user/user.model'
 import QueryBuilder from '@/builder/QueryBuilder'
 
+/**
+ * Initializes a new student profile for an existing user
+ */
 const createStudentIntoDatabase = async (payload: TStudent) => {
-  const existingStudent = await Student.findOne({ userId: payload.userId })
+  const existingStudent = await Student.findOne({userId: payload.userId})
   if (existingStudent) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Student already exists for this user')
   }
@@ -15,6 +18,9 @@ const createStudentIntoDatabase = async (payload: TStudent) => {
   return result
 }
 
+/**
+ * Retrieves all student profiles with filtering, searching, and pagination
+ */
 const getAllStudentsFromDatabase = async (query: Record<string, unknown>) => {
   const searchableFields = ['notes']
   const studentQuery = new QueryBuilder(
@@ -30,9 +36,12 @@ const getAllStudentsFromDatabase = async (query: Record<string, unknown>) => {
   const result = await studentQuery.modelQuery
   const meta = await studentQuery.countTotal()
 
-  return { result, meta }
+  return {result, meta}
 }
 
+/**
+ * Fetches a single student profile by its document ID
+ */
 const getStudentByIdFromDatabase = async (studentId: string) => {
   const result = await Student.findById(studentId).populate('userId', 'name email phone')
   if (!result) {
@@ -41,14 +50,20 @@ const getStudentByIdFromDatabase = async (studentId: string) => {
   return result
 }
 
+/**
+ * Retrieves a student profile based on the associated User ID
+ */
 const getStudentByUserIdFromDatabase = async (userId: string) => {
-  const result = await Student.findOne({ userId: userId }).populate('userId', 'name email phone')
+  const result = await Student.findOne({userId: userId}).populate('userId', 'name email phone')
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
   }
   return result
 }
 
+/**
+ * Updates an existing student profile's information
+ */
 const updateStudentInDatabase = async (studentId: string, payload: Partial<TStudent>) => {
   const result = await Student.findByIdAndUpdate(studentId, payload, {
     new: true,
@@ -62,6 +77,9 @@ const updateStudentInDatabase = async (studentId: string, payload: Partial<TStud
   return result
 }
 
+/**
+ * Permanently removes a student profile document
+ */
 const deleteStudentFromDatabase = async (studentId: string) => {
   const result = await Student.findByIdAndDelete(studentId)
   if (!result) {
@@ -70,11 +88,17 @@ const deleteStudentFromDatabase = async (studentId: string) => {
   return result
 }
 
+/**
+ * Retrieves all students belonging to a specific batch
+ */
 const getStudentsByBatchFromDatabase = async (batchNumber: number) => {
-  const result = await Student.find({ batchNumber }).populate('userId', 'name email phone')
+  const result = await Student.find({batchNumber}).populate('userId', 'name email phone')
   return result
 }
 
+/**
+ * Updates a student's progress tracking (current mission and module)
+ */
 const updateStudentProgressInDatabase = async (
   studentId: string,
   mission: number,
@@ -86,7 +110,7 @@ const updateStudentProgressInDatabase = async (
       currentMission: mission,
       currentModule: module,
     },
-    { new: true, runValidators: true },
+    {new: true, runValidators: true},
   )
 
   if (!result) {
@@ -96,16 +120,16 @@ const updateStudentProgressInDatabase = async (
   return result
 }
 
+/**
+ * Assigns one or more students to a specific SRM (mentor)
+ */
 const assignStudentsToSRMInDatabase = async (srmId: string, studentIds: string[]) => {
-  // Verify if the SRM exists and has the SRM role
   const srm = await User.findById(srmId)
   if (!srm || srm.role !== 'SRM') {
     throw new AppError(httpStatus.NOT_FOUND, 'SRM not found or user is not an SRM')
   }
 
-  // Update students by userId (not student document _id)
-  // The frontend passes user IDs, not student document IDs
-  const result = await Student.updateMany({ userId: { $in: studentIds } }, { assignedSrmId: srmId })
+  const result = await Student.updateMany({userId: {$in: studentIds}}, {assignedSrmId: srmId})
 
   if (result.matchedCount === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No students found with the provided IDs')

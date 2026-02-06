@@ -15,7 +15,7 @@ const LOG_DIR = path.join(process.cwd(), 'logs')
 // Ensure log directory exists
 const ensureLogDirectory = () => {
   if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true })
+    fs.mkdirSync(LOG_DIR, {recursive: true})
   }
 }
 

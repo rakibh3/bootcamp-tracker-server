@@ -1,14 +1,14 @@
 import cors from 'cors'
-import express, { Application, Request, Response } from 'express'
+import express, {Application, Request, Response} from 'express'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import compression from 'compression'
 import helmet from 'helmet'
 
-import { globalErrorHandler } from '@/error/globalErrorHandler'
-import { notFoundRoute } from '@/error/notFoundRoute'
-import { globalLimiter } from '@/middlewares/rateLimiter'
+import {globalErrorHandler} from '@/error/globalErrorHandler'
+import {notFoundRoute} from '@/error/notFoundRoute'
+import {globalLimiter} from '@/middlewares/rateLimiter'
 
 import router from './routes'
 
@@ -35,8 +35,8 @@ app.use(
 )
 
 // Parser with size limits
-app.use(express.json({ limit: '10kb' }))
-app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+app.use(express.json({limit: '10kb'}))
+app.use(express.urlencoded({extended: true, limit: '10kb'}))
 
 // CORS
 app.use(

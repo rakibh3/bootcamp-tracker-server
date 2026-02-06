@@ -5,7 +5,8 @@
   "useTabs": false,
   "trailingComma": "all",
   "printWidth": 100,
-  "bracketSpacing": true,
+  "bracketSpacing": false,
   "arrowParens": "always",
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "bracketSameLine": true
 }

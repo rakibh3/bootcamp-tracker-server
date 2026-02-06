@@ -1,5 +1,5 @@
-import { model, Schema } from 'mongoose'
-import { TCallHistory } from './call-history.interface'
+import {model, Schema} from 'mongoose'
+import {TCallHistory} from './call-history.interface'
 
 const callHistorySchema = new Schema<TCallHistory>(
   {
@@ -45,7 +45,7 @@ const callHistorySchema = new Schema<TCallHistory>(
 )
 
 // Index for efficient queries
-callHistorySchema.index({ student: 1, calledAt: -1 })
-callHistorySchema.index({ calledBy: 1, calledAt: -1 })
+callHistorySchema.index({student: 1, calledAt: -1})
+callHistorySchema.index({calledBy: 1, calledAt: -1})
 
 export const CallHistory = model<TCallHistory>('CallHistory', callHistorySchema)

@@ -1,5 +1,5 @@
-import { model, Schema } from 'mongoose'
-import { TAttendance } from './attendance.interface'
+import {model, Schema} from 'mongoose'
+import {TAttendance} from './attendance.interface'
 
 const attendanceSchema = new Schema<TAttendance>(
   {
@@ -41,8 +41,8 @@ const attendanceSchema = new Schema<TAttendance>(
 )
 
 // Indexes for efficient queries
-attendanceSchema.index({ studentId: 1, date: -1 })
-attendanceSchema.index({ date: 1 })
-attendanceSchema.index({ studentId: 1, date: 1 }, { unique: true }) // One attendance per student per day
+attendanceSchema.index({studentId: 1, date: -1})
+attendanceSchema.index({date: 1})
+attendanceSchema.index({studentId: 1, date: 1}, {unique: true}) // One attendance per student per day
 
 export const Attendance = model<TAttendance>('Attendance', attendanceSchema)

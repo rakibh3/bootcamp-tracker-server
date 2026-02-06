@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-unused-vars */
-import { ErrorRequestHandler } from 'express'
+import {ErrorRequestHandler} from 'express'
 import httpStatus from 'http-status'
-import { ZodError } from 'zod'
+import {ZodError} from 'zod'
 
-import { handleZodValidationError } from '@/error/zodError'
-import { handleCastValidationError } from './castError'
-import { handleDuplicateValidationError } from './duplicateError'
+import {handleZodValidationError} from '@/error/zodError'
+import {handleCastValidationError} from './castError'
+import {handleDuplicateValidationError} from './duplicateError'
 
 export const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // Handle Zod Validation Error

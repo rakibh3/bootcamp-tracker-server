@@ -1,16 +1,16 @@
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { sendResponse } from '@/utils/sendResponse'
-import { UserServices } from './user.service'
-import { USER_ROLE } from './user.constant'
+import {catchAsync} from '@/utils/catchAsync'
+import {sendResponse} from '@/utils/sendResponse'
+import {UserServices} from '@/modules/user/user.service'
+import {USER_ROLE} from '@/modules/user/user.constant'
 
-// Create a new user
+/**
+ * Handles request to register a new user in the system
+ */
 const createUser = catchAsync(async (req, res) => {
-  const { ...payload } = req.body
+  const result = await UserServices.createUserIntoDatabase(req.body)
 
-  const result = await UserServices.createUserIntoDatabase(payload)
-
-  let message
+  let message = 'User registered successfully'
   if (result?.role === USER_ROLE.STUDENT) {
     message = 'Student registered successfully'
   } else if (result?.role === USER_ROLE.ADMIN) {
@@ -25,7 +25,9 @@ const createUser = catchAsync(async (req, res) => {
   })
 })
 
-// Get all users
+/**
+ * Handles request to fetch all registered users
+ */
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await UserServices.getAllUsersFromDatabase()
 
@@ -37,10 +39,12 @@ const getAllUsers = catchAsync(async (req, res) => {
   })
 })
 
-// Update user role
+/**
+ * Handles request to update the administrative role of a user
+ */
 const updateUserRole = catchAsync(async (req, res) => {
-  const { userId } = req.params
-  const { role } = req.body
+  const {userId} = req.params
+  const {role} = req.body
 
   const result = await UserServices.updateUserRoleInDatabase(userId as string, role)
 
@@ -52,9 +56,11 @@ const updateUserRole = catchAsync(async (req, res) => {
   })
 })
 
-// Delete user
+/**
+ * Handles request to permanently delete a user and their data
+ */
 const deleteUser = catchAsync(async (req, res) => {
-  const { userId } = req.params
+  const {userId} = req.params
 
   const result = await UserServices.deleteUserFromDatabase(userId as string)
 
@@ -66,7 +72,9 @@ const deleteUser = catchAsync(async (req, res) => {
   })
 })
 
-// Get all SRMs
+/**
+ * Handles request to fetch all users with the SRM role
+ */
 const getSRMs = catchAsync(async (req, res) => {
   const result = await UserServices.getSRMsFromDatabase()
 
@@ -78,10 +86,12 @@ const getSRMs = catchAsync(async (req, res) => {
   })
 })
 
-// Update SMTP config
+/**
+ * Handles request to update an SRM's SMTP email configuration
+ */
 const updateSmtpConfig = catchAsync(async (req, res) => {
   const userId = req.user._id
-  const { smtpConfig } = req.body
+  const {smtpConfig} = req.body
 
   const result = await UserServices.updateSmtpConfigInDatabase(userId, smtpConfig)
 

@@ -1,4 +1,4 @@
-import mongoose, { Query } from 'mongoose'
+import mongoose, {Query} from 'mongoose'
 
 class QueryBuilder<T> {
   public modelQuery: Query<T[], T>
@@ -17,7 +17,7 @@ class QueryBuilder<T> {
         $or: searchableFields.map(
           (field) =>
             ({
-              [field]: { $regex: searchTerm, $options: 'i' },
+              [field]: {$regex: searchTerm, $options: 'i'},
             }) as any,
         ),
       })
@@ -28,7 +28,7 @@ class QueryBuilder<T> {
 
   // Filter query
   filter() {
-    const queryObj = { ...this.query }
+    const queryObj = {...this.query}
 
     // Filtering
     const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'absentFilter']
@@ -37,7 +37,7 @@ class QueryBuilder<T> {
     // Convert all string values to case-insensitive regex
     Object.keys(queryObj).forEach((key) => {
       if (typeof queryObj[key] === 'string') {
-        queryObj[key] = { $regex: queryObj[key], $options: 'i' }
+        queryObj[key] = {$regex: queryObj[key], $options: 'i'}
       }
     })
 
@@ -87,7 +87,7 @@ class QueryBuilder<T> {
     const absentFilter = this?.query?.absentFilter as string | undefined
 
     if (absentFilter && ['today', 'last2days', 'last3days'].includes(absentFilter)) {
-      const { startOfDay: todayStart, endOfDay: todayEnd } = getDhakaTimeRange()
+      const {startOfDay: todayStart, endOfDay: todayEnd} = getDhakaTimeRange()
 
       let startDate: Date
       let endDate: Date = todayEnd

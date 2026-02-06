@@ -1,4 +1,4 @@
-import { Types } from 'mongoose'
+import {Types} from 'mongoose'
 
 export type TCallStatus = 'COMPLETED' | 'NO_ANSWER' | 'BUSY' | 'FAILED' | 'SCHEDULED'
 export type TCallType = 'FOLLOW_UP' | 'REMINDER' | 'SUPPORT' | 'FEEDBACK'

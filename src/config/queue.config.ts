@@ -1,6 +1,6 @@
 import Queue from 'bull'
 import redisClient from './redis.config'
-import { EmailService } from '@/modules/email/email.service'
+import {EmailService} from '@/modules/email/email.service'
 
 // Create email queue with Redis
 const emailQueue = new Queue('email-queue', {
@@ -22,9 +22,9 @@ const emailQueue = new Queue('email-queue', {
 
 // Process email jobs
 emailQueue.process(10, async (job) => {
-  const { email, otp } = job.data
+  const {email, otp} = job.data
   await EmailService.sendOTPEmail(email, otp)
-  return { sent: true, email }
+  return {sent: true, email}
 })
 
 // Event handlers

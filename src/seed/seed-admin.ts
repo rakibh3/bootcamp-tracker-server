@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { User } from '../modules/user/user.model'
+import {User} from '../modules/user/user.model'
 import config from '../config'
 
 const seedAdmin = async () => {
@@ -14,7 +14,7 @@ const seedAdmin = async () => {
       role: 'ADMIN' as const,
     }
 
-    const existingAdmin = await User.findOne({ email: adminData.email })
+    const existingAdmin = await User.findOne({email: adminData.email})
 
     if (existingAdmin) {
       console.log('Admin user already exists')

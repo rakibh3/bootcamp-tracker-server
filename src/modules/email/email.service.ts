@@ -1,6 +1,10 @@
 import nodemailer from 'nodemailer'
 import emailTransporter from '@/config/email.config'
 
+/**
+ * Sends a standard OTP verification email using
+ * the default system transporter.
+ */
 const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
   const mailOptions = {
     from: process.env.SMTP_FROM || 'noreply@bootcamp-tracker.com',
@@ -54,32 +58,35 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
   await emailTransporter.sendMail(mailOptions)
 }
 
+/**
+ * Sends a personalized email using a custom
+ * sender configuration (e.g., for mentor-to-student emails).
+ */
+const sendPersonalizedEmail = async (
+  senderConfig: {email: string; appPassword: string; name?: string},
+  to: string,
+  subject: string,
+  html: string,
+): Promise<void> => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: senderConfig.email,
+      pass: senderConfig.appPassword,
+    },
+  })
+
+  const mailOptions = {
+    from: senderConfig.name ? `"${senderConfig.name}" <${senderConfig.email}>` : senderConfig.email,
+    to,
+    subject,
+    html,
+  }
+
+  await transporter.sendMail(mailOptions)
+}
+
 export const EmailService = {
   sendOTPEmail,
-  sendPersonalizedEmail: async (
-    senderConfig: { email: string; appPassword: string; name?: string },
-    to: string,
-    subject: string,
-    html: string,
-  ): Promise<void> => {
-    // Create a temporary transporter for this specific sender
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: senderConfig.email,
-        pass: senderConfig.appPassword,
-      },
-    })
-
-    const mailOptions = {
-      from: senderConfig.name
-        ? `"${senderConfig.name}" <${senderConfig.email}>`
-        : senderConfig.email,
-      to,
-      subject,
-      html,
-    }
-
-    await transporter.sendMail(mailOptions)
-  },
+  sendPersonalizedEmail,
 }

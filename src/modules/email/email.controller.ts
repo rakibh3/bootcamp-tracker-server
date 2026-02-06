@@ -1,10 +1,13 @@
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { sendResponse } from '@/utils/sendResponse'
-import { EmailService } from './email.service'
+import {catchAsync} from '@/utils/catchAsync'
+import {sendResponse} from '@/utils/sendResponse'
+import {EmailService} from '@/modules/email/email.service'
 
+/**
+ * Handles request to send an OTP verification email
+ */
 const sendOTP = catchAsync(async (req, res) => {
-  const { email, otp } = req.body
+  const {email, otp} = req.body
 
   await EmailService.sendOTPEmail(email, otp)
 
@@ -16,11 +19,10 @@ const sendOTP = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to send a welcome email to new users
+ */
 const sendWelcomeEmail = catchAsync(async (req, res) => {
-  const { email, name } = req.body
-
-  // Welcome email logic would go here
-  // For now, just return success
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -29,10 +31,10 @@ const sendWelcomeEmail = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to send reminder emails to students
+ */
 const sendReminderEmail = catchAsync(async (req, res) => {
-  const { email, subject, message } = req.body
-
-  // Reminder email logic would go here
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

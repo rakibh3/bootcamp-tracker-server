@@ -1,8 +1,11 @@
 import httpStatus from 'http-status'
-import { catchAsync } from '@/utils/catchAsync'
-import { sendResponse } from '@/utils/sendResponse'
-import { StudentServices } from './student.service'
+import {catchAsync} from '@/utils/catchAsync'
+import {sendResponse} from '@/utils/sendResponse'
+import {StudentServices} from '@/modules/student/student.service'
 
+/**
+ * Handles request to create a new student record
+ */
 const createStudent = catchAsync(async (req, res) => {
   const result = await StudentServices.createStudentIntoDatabase(req.body)
 
@@ -14,19 +17,25 @@ const createStudent = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch all student records with advanced filtering
+ */
 const getAllStudents = catchAsync(async (req, res) => {
-  const { result, meta } = await StudentServices.getAllStudentsFromDatabase(req.query)
+  const {result, meta} = await StudentServices.getAllStudentsFromDatabase(req.query)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Students fetched successfully',
-    data: { students: result, meta },
+    data: {students: result, meta},
   })
 })
 
+/**
+ * Handles request to fetch a specific student record by its document ID
+ */
 const getStudentById = catchAsync(async (req, res) => {
-  const { studentId } = req.params
+  const {studentId} = req.params
   const result = await StudentServices.getStudentByIdFromDatabase(studentId as string)
 
   sendResponse(res, {
@@ -37,8 +46,11 @@ const getStudentById = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch a student profile by associated User ID
+ */
 const getStudentByUserId = catchAsync(async (req, res) => {
-  const { userId } = req.params
+  const {userId} = req.params
   const result = await StudentServices.getStudentByUserIdFromDatabase(userId as string)
 
   sendResponse(res, {
@@ -49,8 +61,11 @@ const getStudentByUserId = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to update student information
+ */
 const updateStudent = catchAsync(async (req, res) => {
-  const { studentId } = req.params
+  const {studentId} = req.params
   const result = await StudentServices.updateStudentInDatabase(studentId as string, req.body)
 
   sendResponse(res, {
@@ -61,8 +76,11 @@ const updateStudent = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to delete a student record
+ */
 const deleteStudent = catchAsync(async (req, res) => {
-  const { studentId } = req.params
+  const {studentId} = req.params
   const result = await StudentServices.deleteStudentFromDatabase(studentId as string)
 
   sendResponse(res, {
@@ -73,8 +91,11 @@ const deleteStudent = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to fetch students filtered by their batch number
+ */
 const getStudentsByBatch = catchAsync(async (req, res) => {
-  const { batchNumber } = req.params
+  const {batchNumber} = req.params
   const result = await StudentServices.getStudentsByBatchFromDatabase(Number(batchNumber))
 
   sendResponse(res, {
@@ -85,9 +106,12 @@ const getStudentsByBatch = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to update a student's educational progress
+ */
 const updateStudentProgress = catchAsync(async (req, res) => {
-  const { studentId } = req.params
-  const { mission, module } = req.body
+  const {studentId} = req.params
+  const {mission, module} = req.body
   const result = await StudentServices.updateStudentProgressInDatabase(
     studentId as string,
     mission,
@@ -102,8 +126,11 @@ const updateStudentProgress = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Handles request to assign multiple students to a specific SRM
+ */
 const assignStudentsToSRM = catchAsync(async (req, res) => {
-  const { srmId, studentIds } = req.body
+  const {srmId, studentIds} = req.body
   const result = await StudentServices.assignStudentsToSRMInDatabase(srmId, studentIds)
 
   sendResponse(res, {

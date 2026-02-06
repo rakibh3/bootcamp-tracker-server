@@ -1,5 +1,5 @@
 import express from 'express'
-import { AnalyticsControllers } from './analytics.controller'
+import {AnalyticsControllers} from '@/modules/analytics/analytics.controller'
 
 const router = express.Router()
 

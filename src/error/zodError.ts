@@ -1,6 +1,6 @@
-import { ZodError, ZodIssue } from 'zod'
+import {ZodError, ZodIssue} from 'zod'
 
-import { TErrorMessage, TErrorResponse } from '@/interface/error'
+import {TErrorMessage, TErrorResponse} from '@/interface/error'
 
 export const handleZodValidationError = (error: ZodError): TErrorResponse => {
   const statusCode = 400
