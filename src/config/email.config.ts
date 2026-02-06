@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
 import nodemailer, {Transporter} from 'nodemailer'
 
+import logger from '@/utils/logger'
+
 dotenv.config()
 
 const emailTransporter: Transporter = nodemailer.createTransport({
@@ -15,9 +17,9 @@ const emailTransporter: Transporter = nodemailer.createTransport({
 
 emailTransporter.verify((error) => {
   if (error) {
-    console.error('❌ Email transporter error:', error)
+    logger.error('Email transporter error:', error)
   } else {
-    console.log('✅ Email transporter ready')
+    logger.info('Email transporter ready')
   }
 })
 

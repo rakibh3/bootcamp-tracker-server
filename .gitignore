@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .vercel
+logs
 
 note.txt
 commit_message.txt

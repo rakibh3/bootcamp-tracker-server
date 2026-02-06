@@ -6,13 +6,14 @@ import {Attendance} from '@/modules/attendance/attendance.model'
 import {AttendanceWindow} from '@/modules/attendance/attendance-window.model'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
+import {getDhakaTimeRange} from '@/utils'
+
 import {
   buildAttendanceMap,
   calculateAttendanceStats,
   filterByAbsentFilter,
   filterBySearchTerm,
-  getDhakaTimeRange,
-} from '@/utils'
+} from './attendance.utils'
 
 /**
  * Creates a student attendance record after verifying

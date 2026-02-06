@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
 import Redis from 'ioredis'
 
+import logger from '@/utils/logger'
+
 dotenv.config()
 
 // Optimized Redis configuration for high throughput
@@ -37,23 +39,23 @@ const redisClient = new Redis({
 
 // Connection event handlers
 redisClient.on('connect', () => {
-  console.log('✅ Redis connected successfully')
+  logger.info('Redis connected successfully')
 })
 
 redisClient.on('ready', () => {
-  console.log('✅ Redis ready for commands')
+  logger.info('Redis ready for commands')
 })
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis connection error:', err)
+  logger.error('Redis connection error:', err)
 })
 
 redisClient.on('close', () => {
-  console.log('⚠️  Redis connection closed')
+  logger.warn('Redis connection closed')
 })
 
 redisClient.on('reconnecting', () => {
-  console.log('🔄 Redis reconnecting...')
+  logger.info('Redis reconnecting...')
 })
 
 export default redisClient

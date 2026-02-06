@@ -5,10 +5,11 @@ import {JwtPayload} from 'jsonwebtoken'
 import emailQueue from '@/config/queue.config'
 import redisClient from '@/config/redis.config'
 import {AppError} from '@/error'
-import {generateToken} from '@/helper'
 import {IAuthResponse, IOTPData, IOTPRequest, IOTPVerify} from '@/modules/otp/otp.interface'
 import {User} from '@/modules/user/user.model'
-import {generateOTP, getOTPRedisKey} from '@/utils'
+import {generateToken} from '@/utils'
+
+import {generateOTP, getOTPRedisKey} from './otp.utils'
 
 const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_MINUTES || 5) * 60
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5)

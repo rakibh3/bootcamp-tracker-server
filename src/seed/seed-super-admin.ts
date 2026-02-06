@@ -2,11 +2,12 @@ import mongoose from 'mongoose'
 
 import config from '@/config'
 import {User} from '@/modules/user/user.model'
+import logger from '@/utils/logger'
 
 const seedSuperAdmin = async () => {
   try {
     await mongoose.connect(config.database_url as string)
-    console.log('Connected to database')
+    logger.info('Connected to database')
 
     const superAdminData = {
       name: 'Super Admin',
@@ -18,17 +19,17 @@ const seedSuperAdmin = async () => {
     const existingSuperAdmin = await User.findOne({email: superAdminData.email})
 
     if (existingSuperAdmin) {
-      console.log('Super Admin user already exists')
+      logger.info('Super Admin user already exists')
       return
     }
 
     const superAdmin = await User.create(superAdminData)
-    console.log('Super Admin user created successfully:', superAdmin)
+    logger.info('Super Admin user created successfully:', {email: superAdmin.email})
   } catch (error) {
-    console.error('Error seeding super admin:', error)
+    logger.error('Error seeding super admin:', error)
   } finally {
     await mongoose.disconnect()
-    console.log('Disconnected from database')
+    logger.info('Disconnected from database')
   }
 }
 

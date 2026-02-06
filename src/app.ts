@@ -7,7 +7,7 @@ import express, {Application, Request, Response} from 'express'
 import helmet from 'helmet'
 
 import {globalErrorHandler, notFoundRoute} from '@/error'
-import {globalLimiter} from '@/middlewares'
+import {globalLimiter, morganMiddleware} from '@/middlewares'
 
 import router from './routes'
 
@@ -17,6 +17,12 @@ dayjs.extend(timezone)
 
 // Create Express app
 const app: Application = express()
+
+// Trust proxy for rate limiting accuracy (Cloudflare, Heroku, Vercel, etc)
+app.set('trust proxy', 1)
+
+// HTTP Request logging
+app.use(morganMiddleware)
 
 // Security middleware
 app.use(
@@ -51,7 +57,7 @@ app.use(
 )
 
 // Global rate limiter
-// app.use('/api', globalLimiter)
+app.use('/api', globalLimiter)
 
 // Root endpoint with beautified HTML
 const getRootController = (req: Request, res: Response) => {

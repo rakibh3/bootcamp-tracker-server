@@ -1,75 +1,88 @@
-import fs from 'fs'
 import path from 'path'
+import winston from 'winston'
+import DailyRotateFile from 'winston-daily-rotate-file'
 
-type LogLevel = 'info' | 'warn' | 'error' | 'debug'
+const {combine, timestamp, printf, colorize, errors} = winston.format
 
-interface LogEntry {
-  timestamp: string
-  level: LogLevel
-  message: string
-  meta?: unknown
-}
-
+/**
+ * Log directory path where all log files will be stored.
+ * The logs folder is located at the project root.
+ */
 const LOG_DIR = path.join(process.cwd(), 'logs')
 
-// Ensure log directory exists
-const ensureLogDirectory = () => {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, {recursive: true})
-  }
-}
+/**
+ * Custom log format for the console output.
+ * Focuses on readability with timestamp, level, and message/stack trace.
+ */
+const consoleFormat = printf(({level, message, timestamp, stack}) => {
+  const logMessage = stack ? `\n${stack}` : message
+  return `${timestamp} [${level}]: ${logMessage}\n`
+})
 
-const formatLogEntry = (entry: LogEntry): string => {
-  const metaStr = entry.meta ? ` | ${JSON.stringify(entry.meta)}` : ''
-  return `[${entry.timestamp}] [${entry.level.toUpperCase()}] ${entry.message}${metaStr}`
-}
+/**
+ * Custom log format for file storage.
+ * Uses JSON format to facilitate machine processing and log analysis tools.
+ * Includes timestamps and full error stacks.
+ */
+const fileFormat = combine(
+  timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),
+  errors({stack: true}),
+  winston.format.json(),
+)
 
-const writeToFile = (filename: string, content: string) => {
-  ensureLogDirectory()
-  const filePath = path.join(LOG_DIR, filename)
-  fs.appendFileSync(filePath, content + '\n')
-}
+/**
+ * Core Winston Logger Instance.
+ * 
+ * Configuration features:
+ * 1. Log Level: 'debug' in development, 'info' in production.
+ * 2. Transports:
+ *    - DailyRotateFile (Application): Stores general info logs, rotated daily, kept for 1 week.
+ *    - DailyRotateFile (Error): Specifically captures error level logs for easier troubleshooting.
+ */
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  format: fileFormat,
+  transports: [
+    // General application logs - Rotated daily, archived after 5MB, retained for 1 week.
+    new DailyRotateFile({
+      dirname: LOG_DIR,
+      filename: 'application-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '5m',
+      maxFiles: '7d',
+      level: 'info',
+    }),
+    // Dedicated error logs - Makes it easy to find production issues at a glance.
+    new DailyRotateFile({
+      dirname: LOG_DIR,
+      filename: 'error-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '5m',
+      maxFiles: '7d',
+      level: 'error',
+    }),
+  ],
+})
 
-const getTimestamp = (): string => {
-  return new Date().toISOString()
-}
-
-const log = (level: LogLevel, message: string, meta?: unknown) => {
-  const entry: LogEntry = {
-    timestamp: getTimestamp(),
-    level,
-    message,
-    meta,
-  }
-
-  const formattedEntry = formatLogEntry(entry)
-
-  // Console output with colors
-  const colors = {
-    info: '\x1b[36m', // Cyan
-    warn: '\x1b[33m', // Yellow
-    error: '\x1b[31m', // Red
-    debug: '\x1b[35m', // Magenta
-  }
-  const reset = '\x1b[0m'
-
-  console.log(`${colors[level]}${formattedEntry}${reset}`)
-
-  // Write to file
-  const today = new Date().toISOString().split('T')[0]
-  writeToFile(`${today}.log`, formattedEntry)
-
-  // Write errors to separate file
-  if (level === 'error') {
-    writeToFile(`${today}-error.log`, formattedEntry)
-  }
-}
-
-export const logger = {
-  info: (message: string, meta?: unknown) => log('info', message, meta),
-  warn: (message: string, meta?: unknown) => log('warn', message, meta),
-  error: (message: string, meta?: unknown) => log('error', message, meta),
-  debug: (message: string, meta?: unknown) => log('debug', message, meta),
+/**
+ * Console Logging Configuration.
+ * 
+ * Enabled only in non-production environments.
+ * Adds color-coding and simplified timestamps for local development debugging.
+ */
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new winston.transports.Console({
+      format: combine(
+        colorize({all: true}),
+        timestamp({format: 'HH:mm:ss'}),
+        errors({stack: true}),
+        consoleFormat,
+      ),
+    }),
+  )
 }
 
 export default logger

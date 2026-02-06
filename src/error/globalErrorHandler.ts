@@ -5,11 +5,22 @@ import httpStatus from 'http-status'
 import {ZodError} from 'zod'
 
 import {handleZodValidationError} from '@/error/zodError'
+import logger from '@/utils/logger'
 
 import {handleCastValidationError} from './castError'
 import {handleDuplicateValidationError} from './duplicateError'
 
 export const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
+  // Log the error with request context for easier debugging
+  const statusCode = error.statusCode || 500
+  const logMessage = `${req.method} ${req.originalUrl} - ${error.message || 'Error'}`
+
+  if (statusCode >= 500) {
+    logger.error(logMessage, error)
+  } else {
+    logger.warn(logMessage, error)
+  }
+
   // Handle Zod Validation Error
   if (error instanceof ZodError) {
     const result = handleZodValidationError(error)
@@ -47,12 +58,12 @@ export const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) =
   }
 
   // Handle other errors
-  const statusCode = error.statusCode || 500
   const message = error.message || 'Something went wrong!'
 
   return res.status(statusCode).json({
     success: false,
     message,
     errorDetails: error,
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
   })
 }

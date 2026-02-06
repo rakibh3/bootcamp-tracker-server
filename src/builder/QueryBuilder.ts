@@ -34,10 +34,14 @@ class QueryBuilder<T> {
     const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'absentFilter']
     excludeFields.forEach((el) => delete queryObj[el])
 
-    // Convert all string values to case-insensitive regex
+    // Convert all string values to case-insensitive regex while preventing NoSQL injection
     Object.keys(queryObj).forEach((key) => {
-      if (typeof queryObj[key] === 'string') {
-        queryObj[key] = {$regex: queryObj[key], $options: 'i'}
+      const value = queryObj[key]
+      if (typeof value === 'string') {
+        queryObj[key] = {$regex: value, $options: 'i'}
+      } else if (typeof value !== 'number' && typeof value !== 'boolean') {
+        // Prevent NoSQL injection by removing objects/arrays from the query
+        delete queryObj[key]
       }
     })
 

@@ -2,12 +2,13 @@ import mongoose from 'mongoose'
 
 import config from '@/config'
 import {User} from '@/modules/user/user.model'
+import logger from '@/utils/logger'
 
 // SRM = Student Relationship Manager
 const seedSRM = async () => {
   try {
     await mongoose.connect(config.database_url as string)
-    console.log('Connected to database')
+    logger.info('Connected to database')
 
     const srmUsers = [
       {
@@ -34,20 +35,20 @@ const seedSRM = async () => {
       const existingSRM = await User.findOne({email: srmData.email})
 
       if (existingSRM) {
-        console.log(`SRM user ${srmData.email} already exists`)
+        logger.info(`SRM user ${srmData.email} already exists`)
         continue
       }
 
       const srm = await User.create(srmData)
-      console.log('SRM user created successfully:', srm.email)
+      logger.info('SRM user created successfully:', {email: srm.email})
     }
 
-    console.log('SRM seeding completed')
+    logger.info('SRM seeding completed')
   } catch (error) {
-    console.error('Error seeding SRM users:', error)
+    logger.error('Error seeding SRM users:', error)
   } finally {
     await mongoose.disconnect()
-    console.log('Disconnected from database')
+    logger.info('Disconnected from database')
   }
 }
 

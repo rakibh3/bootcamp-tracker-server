@@ -1,6 +1,7 @@
 import Queue from 'bull'
 
 import {EmailService} from '@/modules/email/email.service'
+import logger from '@/utils/logger'
 
 import redisClient from './redis.config'
 
@@ -31,15 +32,15 @@ emailQueue.process(10, async (job) => {
 
 // Event handlers
 emailQueue.on('completed', (job, result) => {
-  console.log(`✅ Email sent to ${result.email}`)
+  logger.info(`Email sent to ${result.email}`)
 })
 
 emailQueue.on('failed', (job, err) => {
-  console.error(`❌ Email failed for ${job?.data?.email}:`, err.message)
+  logger.error(`Email failed for ${job?.data?.email}:`, err)
 })
 
 emailQueue.on('error', (error) => {
-  console.error('❌ Queue error:', error)
+  logger.error('Queue error:', error)
 })
 
 export default emailQueue
