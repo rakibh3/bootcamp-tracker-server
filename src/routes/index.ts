@@ -1,8 +1,10 @@
 import {Router} from 'express'
 
+import config from '@/config'
 import {AnalyticsRoute} from '@/modules/analytics/analytics.route'
 import {AttendanceRoute} from '@/modules/attendance/attendance.route'
 import {CallHistoryRoute} from '@/modules/call-history/call-history.route'
+import {DevRoute} from '@/modules/dev/dev.route'
 import {EmailRoute} from '@/modules/email/email.route'
 import {OTPRoute} from '@/modules/otp/otp.route'
 import {StudentRoute} from '@/modules/student/student.route'
@@ -20,5 +22,9 @@ router.use(StudentRoute)
 router.use(CallHistoryRoute)
 router.use(AnalyticsRoute)
 router.use(EmailRoute)
+
+if (config.node_env === 'development') {
+  router.use('/dev', DevRoute)
+}
 
 export default router

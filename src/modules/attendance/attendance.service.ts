@@ -20,23 +20,12 @@ import {
  * window status and existence.
  */
 const createAttendanceInDatabase = async (payload: TAttendance) => {
-  let windowStatus = await AttendanceWindow.findOne()
+  const windowStatus = await AttendanceWindow.findOne()
 
-  if (!windowStatus) {
-    windowStatus = await AttendanceWindow.create({isOpen: false})
-  }
-
-  if (!windowStatus.isOpen) {
+  if (!windowStatus || windowStatus.isOpen === false) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       'Attendance window is currently closed. Please wait for admin to open it.',
-    )
-  }
-
-  if (windowStatus.verificationCode && payload.verificationCode !== windowStatus.verificationCode) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      'Invalid verification code. Please check with your mentor.',
     )
   }
 
@@ -60,12 +49,7 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
   }
 
   const result = await Attendance.create({
-    studentId: payload.studentId,
-    status: payload.status,
-    mission: payload.mission,
-    module: payload.module,
-    moduleVideo: payload.moduleVideo,
-    note: payload.note,
+    ...payload,
     date: dhakaTime,
   })
 

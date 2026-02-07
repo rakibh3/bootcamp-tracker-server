@@ -8,6 +8,5 @@ export type TStudent = {
   status: 'ACTIVE' | 'INACTIVE'
   currentMission: number
   currentModule: number
-  notes?: string
   assignedSrmId?: Types.ObjectId
 }

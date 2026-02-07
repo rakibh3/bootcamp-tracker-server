@@ -22,10 +22,6 @@ const attendanceSchema = new Schema<TAttendance>(
       type: Number,
       required: true,
     },
-    moduleVideo: {
-      type: Number,
-      required: true,
-    },
     date: {
       type: Date,
       required: true,

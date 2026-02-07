@@ -36,9 +36,6 @@ const studentSchema = new Schema<TStudent>(
       type: Number,
       default: 1,
     },
-    notes: {
-      type: String,
-    },
     assignedSrmId: {
       type: Schema.Types.ObjectId,
       ref: 'User',

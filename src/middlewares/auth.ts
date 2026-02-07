@@ -11,6 +11,7 @@ import {catchAsync} from '@/utils'
 const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization
+    console.log('Token', authHeader)
 
     // Check if the authorization header is provided
     if (!authHeader) {

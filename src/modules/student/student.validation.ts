@@ -1,7 +1,10 @@
 import {z} from 'zod'
 
 export const createStudentValidationSchema = z.object({
-  user: z.string().min(1, 'User ID is required'),
+  name: z.string().optional(),
+  email: z.email('Invalid email address'),
+  phone: z.string().min(1, 'Phone number is required'),
+  discordUsername: z.string().min(1, 'Discord username is required'),
   enrollmentDate: z.coerce.date().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   notes: z.string().optional(),

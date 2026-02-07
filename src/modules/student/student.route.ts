@@ -13,7 +13,7 @@ const router = express.Router()
 // Route to create a new student
 router.post(
   '/students',
-  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
+  // auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
   validateRequest(createStudentValidationSchema),
   StudentControllers.createStudent,
 )
@@ -40,19 +40,32 @@ router.get(
 )
 
 // Route to get student by user ID
-router.get('/students/user/:userId', StudentControllers.getStudentByUserId)
+router.get(
+  '/students/user/:userId',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM),
+  StudentControllers.getStudentByUserId,
+)
 
 // Route to update student
 router.patch(
   '/students/:studentId',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM),
   validateRequest(updateStudentValidationSchema),
   StudentControllers.updateStudent,
 )
 
 // Route to update student progress
-router.patch('/students/:studentId/progress', StudentControllers.updateStudentProgress)
+router.patch(
+  '/students/:studentId/progress',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN, USER_ROLE.SRM),
+  StudentControllers.updateStudentProgress,
+)
 
 // Route to delete student
-router.delete('/students/:studentId', StudentControllers.deleteStudent)
+router.delete(
+  '/students/:studentId',
+  auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN),
+  StudentControllers.deleteStudent,
+)
 
 export const StudentRoute = router

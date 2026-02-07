@@ -32,7 +32,7 @@ const fileFormat = combine(
 
 /**
  * Core Winston Logger Instance.
- * 
+ *
  * Configuration features:
  * 1. Log Level: 'debug' in development, 'info' in production.
  * 2. Transports:
@@ -68,7 +68,7 @@ export const logger = winston.createLogger({
 
 /**
  * Console Logging Configuration.
- * 
+ *
  * Enabled only in non-production environments.
  * Adds color-coding and simplified timestamps for local development debugging.
  */

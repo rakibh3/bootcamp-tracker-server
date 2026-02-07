@@ -23,7 +23,7 @@ const skip = () => {
 
 /**
  * Morgan Middleware Configuration.
- * 
+ *
  * Uses a concise custom format that captures:
  * - HTTP Method (GET, POST, etc.)
  * - Request URL

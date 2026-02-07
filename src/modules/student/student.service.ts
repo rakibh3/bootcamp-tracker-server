@@ -9,13 +9,64 @@ import {User} from '@/modules/user/user.model'
 /**
  * Initializes a new student profile for an existing user
  */
-const createStudentIntoDatabase = async (payload: TStudent) => {
-  const existingStudent = await Student.findOne({userId: payload.userId})
-  if (existingStudent) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Student already exists for this user')
+/**
+ * Initializes a new student profile, creating or linking to a user account
+ */
+const createStudentIntoDatabase = async (payload: any) => {
+  const session = await Student.startSession()
+  let result
+
+  try {
+    session.startTransaction()
+
+    // 1. Check if user exists
+    let user = await User.findOne({
+      $or: [{email: payload.email}, {phone: payload.phone}],
+    }).session(session)
+
+    // 2. If user doesn't exist, create new user
+    if (!user) {
+      const newUser = await User.create(
+        [
+          {
+            name: payload.name,
+            email: payload.email,
+            phone: payload.phone,
+            role: 'STUDENT',
+          },
+        ],
+        {session},
+      )
+      user = newUser[0]
+    }
+
+    // 3. Check if student profile already exists for this user
+    const existingStudent = await Student.findOne({userId: user._id}).session(session)
+    if (existingStudent) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Student profile already exists for this user')
+    }
+
+    // 4. Create student profile linked to user
+    const newStudent = await Student.create(
+      [
+        {
+          userId: user._id,
+          discordUsername: payload.discordUsername,
+        },
+      ],
+      {session},
+    )
+
+    result = newStudent[0]
+
+    await session.commitTransaction()
+    await session.endSession()
+  } catch (error) {
+    await session.abortTransaction()
+    await session.endSession()
+    throw error
   }
 
-  const result = await Student.create(payload)
   return result
 }
 

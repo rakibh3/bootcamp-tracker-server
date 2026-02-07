@@ -10,7 +10,7 @@ const router = express.Router()
 // Route to create a new user
 router.post(
   '/auth/register',
-  // auth(USER_ROLE.ADMIN),
+  // auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   validateRequest(userValidationSchema),
   UserControllers.createUser,
 )
@@ -32,7 +32,7 @@ router.get('/users/srm', auth(USER_ROLE.SUPER_ADMIN, USER_ROLE.ADMIN), UserContr
 // Route to update SMTP config
 router.patch(
   '/users/smtp-config',
-  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   UserControllers.updateSmtpConfig,
 )
 
