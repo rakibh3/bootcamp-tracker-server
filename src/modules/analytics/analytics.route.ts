@@ -1,7 +1,7 @@
 import express from 'express'
 
-import {AnalyticsControllers} from '@/modules/analytics/analytics.controller'
 import {auth} from '@/middlewares'
+import {AnalyticsControllers} from '@/modules/analytics/analytics.controller'
 import {USER_ROLE} from '@/modules/user/user.constant'
 
 const router = express.Router()
