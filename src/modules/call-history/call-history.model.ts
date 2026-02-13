@@ -6,7 +6,7 @@ const callHistorySchema = new Schema<TCallHistory>(
   {
     student: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Student',
       required: true,
     },
     calledBy: {

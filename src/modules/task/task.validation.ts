@@ -1,3 +1,4 @@
+import {Types} from 'mongoose'
 import {z} from 'zod'
 
 export const createTaskValidationSchema = z.object({
@@ -15,12 +16,6 @@ export const createTaskValidationSchema = z.object({
     .int('Module number must be an integer')
     .positive('Module number must be positive'),
 
-  videoNumber: z
-    .string({
-      message: 'Video number is required',
-    })
-    .min(1, 'Video number cannot be empty'),
-
   guideline: z
     .string({
       message: 'Guideline is required',
@@ -37,7 +32,11 @@ export const createTaskValidationSchema = z.object({
     .string({
       message: 'Created by is required',
     })
-    .min(1, 'Created by cannot be empty'),
+    .min(1, 'Created by cannot be empty')
+    .refine((val) => Types.ObjectId.isValid(val), {
+      message: 'Created by must be a valid user ID',
+    })
+    .transform((val) => new Types.ObjectId(val)),
 })
 
 export const updateTaskValidationSchema = z.object({
@@ -51,13 +50,6 @@ export const updateTaskValidationSchema = z.object({
     .number()
     .int('Module number must be an integer')
     .positive('Module number must be positive')
-    .optional(),
-
-  videoNumber: z
-    .string({
-      message: 'Video number must be a string',
-    })
-    .min(1, 'Video number cannot be empty')
     .optional(),
 
   guideline: z
@@ -74,5 +66,9 @@ export const updateTaskValidationSchema = z.object({
       message: 'Created by must be a string',
     })
     .min(1, 'Created by cannot be empty')
+    .refine((val) => Types.ObjectId.isValid(val), {
+      message: 'Created by must be a valid user ID',
+    })
+    .transform((val) => new Types.ObjectId(val))
     .optional(),
 })

@@ -10,9 +10,9 @@ const seedAdmin = async () => {
     logger.info('Connected to database')
 
     const adminData = {
-      name: 'Admin User',
-      email: 'admin@bootcamp-tracker.com',
-      phone: '+8801700000001',
+      name: 'Admin Rakib',
+      email: 'rakibrj.ksg@gmail.com',
+      phone: '01745464756',
       role: 'ADMIN' as const,
     }
 

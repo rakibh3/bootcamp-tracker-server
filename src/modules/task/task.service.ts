@@ -6,20 +6,21 @@ import {Task} from '@/modules/task/task.model'
 import {getDhakaTimeRange} from '@/utils'
 
 /**
- * Creates a new task and enforces a single upcoming task policy.
+ * Creates a new task and enforces one task per due-date day.
  */
 const createTaskIntoDatabase = async (payload: TTask) => {
-  const {endOfDay} = getDhakaTimeRange()
   const taskDate = new Date(payload.dueDate)
+  const {startOfDay: targetStartOfDay, endOfDay: targetEndOfDay} = getDhakaTimeRange(taskDate)
 
-  if (taskDate > endOfDay) {
-    const existingUpcomingTask = await Task.findOne({
-      dueDate: {$gt: endOfDay},
-    })
+  const existingTaskForDay = await Task.findOne({
+    dueDate: {
+      $gte: targetStartOfDay,
+      $lte: targetEndOfDay,
+    },
+  })
 
-    if (existingUpcomingTask) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Only one upcoming task can be assigned')
-    }
+  if (existingTaskForDay) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Only one task can be created per day')
   }
 
   const result = await Task.create(payload)
@@ -27,23 +28,23 @@ const createTaskIntoDatabase = async (payload: TTask) => {
 }
 
 /**
- * Updates an existing task and validates upcoming task constraints.
+ * Updates an existing task and validates one task per due-date day.
  */
 const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => {
-  const {endOfDay} = getDhakaTimeRange()
-
   if (payload.dueDate) {
     const taskDate = new Date(payload.dueDate)
+    const {startOfDay: targetStartOfDay, endOfDay: targetEndOfDay} = getDhakaTimeRange(taskDate)
 
-    if (taskDate > endOfDay) {
-      const existingUpcomingTask = await Task.findOne({
-        _id: {$ne: taskId},
-        dueDate: {$gt: endOfDay},
-      })
+    const existingTaskForDay = await Task.findOne({
+      _id: {$ne: taskId},
+      dueDate: {
+        $gte: targetStartOfDay,
+        $lte: targetEndOfDay,
+      },
+    })
 
-      if (existingUpcomingTask) {
-        throw new AppError(httpStatus.BAD_REQUEST, 'Only one upcoming task can be assigned')
-      }
+    if (existingTaskForDay) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Only one task can be created per day')
     }
   }
 

@@ -12,10 +12,6 @@ const taskSchema = new Schema<TTask>(
       type: Number,
       required: true,
     },
-    videoNumber: {
-      type: String,
-      required: true,
-    },
     guideline: {
       type: String,
       required: true,

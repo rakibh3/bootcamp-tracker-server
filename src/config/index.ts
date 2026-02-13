@@ -1,8 +1,12 @@
 import dotenv from 'dotenv'
 import path from 'path'
 
-// Load environment variables
-dotenv.config({path: path.join(process.cwd(), '.env')})
+// Load environment variables based on the current environment
+if (process.env.NODE_ENV === 'production') {
+  dotenv.config({path: path.join(process.cwd(), '.env.production')})
+} else {
+  dotenv.config({path: path.join(process.cwd(), '.env')})
+}
 
 // Export config from environment
 export default {

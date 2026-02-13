@@ -6,7 +6,7 @@ import {Attendance} from '@/modules/attendance/attendance.model'
 import {AttendanceWindow} from '@/modules/attendance/attendance-window.model'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
-import {getDhakaTimeRange} from '@/utils'
+import {getDhakaTime, getDhakaTimeRange} from '@/utils'
 
 import {
   buildAttendanceMap,
@@ -16,10 +16,17 @@ import {
 } from './attendance.utils'
 
 /**
- * Creates a student attendance record after verifying
- * window status and existence.
+ * Creates a student attendance record after verifying window status and Student profile existence.
+ * 
+ * Business Rules:
+ * - Attendance window must be open
+ * - User must exist and have STUDENT role
+ * - User must have a Student profile (enrolled student)
+ * - One attendance per student per day
+ * - Stores User ID for optimal query performance
  */
 const createAttendanceInDatabase = async (payload: TAttendance) => {
+  // Step 1: Verify attendance window is open
   const windowStatus = await AttendanceWindow.findOne()
 
   if (!windowStatus || windowStatus.isOpen === false) {
@@ -31,11 +38,33 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
 
   const {startOfDay, endOfDay, dhakaTime} = getDhakaTimeRange()
 
-  const student = await User.findById(payload.studentId)
-  if (!student) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
+  // Step 2: Validate User exists
+  const user = await User.findById(payload.studentId)
+  if (!user) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      `User not found with ID: ${payload.studentId}`,
+    )
   }
 
+  // Step 3: Validate User has STUDENT role
+  if (user.role !== 'STUDENT') {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      `User must have STUDENT role to create attendance. Current role: ${user.role}`,
+    )
+  }
+
+  // Step 4: Validate Student profile exists
+  const studentProfile = await Student.findOne({userId: payload.studentId})
+  if (!studentProfile) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'User must have a Student profile to create attendance. Please contact admin to create your student profile.',
+    )
+  }
+
+  // Step 5: Check for duplicate attendance on the same day
   const existingAttendance = await Attendance.findOne({
     studentId: payload.studentId,
     date: {$gte: startOfDay, $lte: endOfDay},
@@ -48,6 +77,7 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
     )
   }
 
+  // Step 6: Create attendance record with User ID
   const result = await Attendance.create({
     ...payload,
     date: dhakaTime,
@@ -296,7 +326,15 @@ const getAttendanceWindowStatus = async () => {
  * attendance for a specific date as absent.
  */
 const markUsersAbsentForDate = async (targetDate?: Date) => {
-  const dateToMark = targetDate || new Date(Date.now() - 24 * 60 * 60 * 1000)
+  /* 
+    If no date is provided, default to yesterday (Dhaka time).
+    Using getDhakaTime() ensures we respect the timezone offset 
+    before subtracting 24 hours.
+  */
+  const dateToMark = targetDate
+    ? new Date(targetDate)
+    : new Date(getDhakaTime().getTime() - 24 * 60 * 60 * 1000)
+
   const {startOfDay, endOfDay} = getDhakaTimeRange(dateToMark)
 
   const now = getDhakaTimeRange()

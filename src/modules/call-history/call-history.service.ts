@@ -20,7 +20,15 @@ const createCallHistoryIntoDatabase = async (payload: TCallHistory) => {
 const getAllCallHistoryFromDatabase = async (query: Record<string, unknown>) => {
   const searchableFields = ['notes']
   const callHistoryQuery = new QueryBuilder(
-    CallHistory.find().populate('student', 'name email phone').populate('calledBy', 'name email'),
+    CallHistory.find()
+      .populate({
+        path: 'student',
+        populate: {
+          path: 'userId',
+          select: 'name email phone',
+        },
+      })
+      .populate('calledBy', 'name email'),
     query,
   )
     .search(searchableFields)
@@ -32,7 +40,18 @@ const getAllCallHistoryFromDatabase = async (query: Record<string, unknown>) => 
   const result = await callHistoryQuery.modelQuery
   const meta = await callHistoryQuery.countTotal()
 
-  return {result, meta}
+  const formattedResult = result.map((item) => {
+    const call = item.toObject() as any
+    if (call.student && call.student.userId) {
+      call.student = {
+        _id: call.student._id,
+        ...call.student.userId,
+      }
+    }
+    return call
+  })
+
+  return {result: formattedResult, meta}
 }
 
 /**
@@ -40,14 +59,28 @@ const getAllCallHistoryFromDatabase = async (query: Record<string, unknown>) => 
  */
 const getCallHistoryByIdFromDatabase = async (callId: string) => {
   const result = await CallHistory.findById(callId)
-    .populate('student', 'name email phone')
+    .populate({
+      path: 'student',
+      populate: {
+        path: 'userId',
+        select: 'name email phone',
+      },
+    })
     .populate('calledBy', 'name email')
 
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, 'Call history not found')
   }
 
-  return result
+  const call = result.toObject() as any
+  if (call.student && call.student.userId) {
+    call.student = {
+      _id: call.student._id,
+      ...call.student.userId,
+    }
+  }
+
+  return call
 }
 
 /**
@@ -70,14 +103,28 @@ const updateCallHistoryInDatabase = async (callId: string, payload: Partial<TCal
     new: true,
     runValidators: true,
   })
-    .populate('student', 'name email phone')
+    .populate({
+      path: 'student',
+      populate: {
+        path: 'userId',
+        select: 'name email phone',
+      },
+    })
     .populate('calledBy', 'name email')
 
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, 'Call history not found')
   }
 
-  return result
+  const call = result.toObject() as any
+  if (call.student && call.student.userId) {
+    call.student = {
+      _id: call.student._id,
+      ...call.student.userId,
+    }
+  }
+
+  return call
 }
 
 /**
@@ -103,11 +150,26 @@ const getScheduledCallsFromDatabase = async (calledBy?: string) => {
   }
 
   const result = await CallHistory.find(filter)
-    .populate('student', 'name email phone')
+    .populate({
+      path: 'student',
+      populate: {
+        path: 'userId',
+        select: 'name email phone',
+      },
+    })
     .populate('calledBy', 'name email')
     .sort({scheduledAt: 1})
 
-  return result
+  return result.map((item) => {
+    const call = item.toObject() as any
+    if (call.student && call.student.userId) {
+      call.student = {
+        _id: call.student._id,
+        ...call.student.userId,
+      }
+    }
+    return call
+  })
 }
 
 /**
@@ -130,11 +192,26 @@ const getTodayCallsFromDatabase = async (calledBy?: string) => {
   }
 
   const result = await CallHistory.find(filter)
-    .populate('student', 'name email phone')
+    .populate({
+      path: 'student',
+      populate: {
+        path: 'userId',
+        select: 'name email phone',
+      },
+    })
     .populate('calledBy', 'name email')
     .sort({calledAt: -1})
 
-  return result
+  return result.map((item) => {
+    const call = item.toObject() as any
+    if (call.student && call.student.userId) {
+      call.student = {
+        _id: call.student._id,
+        ...call.student.userId,
+      }
+    }
+    return call
+  })
 }
 
 export const CallHistoryServices = {

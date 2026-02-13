@@ -1,5 +1,5 @@
 export {catchAsync} from './catchAsync'
-export {getDhakaTimeRange} from './dhakaTime.utils'
+export {getDhakaTime, getDhakaTimeRange} from './dhakaTime.utils'
 export {generateToken} from './generateToken'
 export {logger} from './logger'
 export {sendResponse} from './sendResponse'
