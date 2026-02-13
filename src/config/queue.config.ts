@@ -3,14 +3,22 @@ import Queue from 'bull'
 import {EmailService} from '@/modules/email/email.service'
 import logger from '@/utils/logger'
 
-import redisClient from './redis.config'
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
+const parsedRedisUrl = new URL(redisUrl)
+const redisDb = parsedRedisUrl.pathname ? Number(parsedRedisUrl.pathname.slice(1)) : undefined
+const redisUsername = parsedRedisUrl.username || undefined
+const redisPassword = parsedRedisUrl.password || undefined
+const isTls = parsedRedisUrl.protocol === 'rediss:'
 
 // Create email queue with Redis
 const emailQueue = new Queue('email-queue', {
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: Number(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
+    host: parsedRedisUrl.hostname,
+    port: Number(parsedRedisUrl.port) || 6379,
+    username: redisUsername,
+    password: redisPassword,
+    db: Number.isNaN(redisDb) ? undefined : redisDb,
+    tls: isTls ? {} : undefined,
   },
   defaultJobOptions: {
     attempts: 3,

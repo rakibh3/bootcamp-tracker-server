@@ -6,11 +6,7 @@ import logger from '@/utils/logger'
 dotenv.config()
 
 // Optimized Redis configuration for high throughput
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   // Connection pool settings for high concurrency
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,

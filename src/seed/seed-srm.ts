@@ -12,22 +12,16 @@ const seedSRM = async () => {
 
     const srmUsers = [
       {
-        name: 'SRM User 1',
-        email: 'srm1@bootcamp-tracker.com',
+        name: 'Farsit',
+        email: 'farsit.ph@gmail.com',
         phone: '+8801700000002',
-        role: 'ADMIN' as const,
+        role: 'SRM' as const,
       },
       {
         name: 'SRM User 2',
         email: 'srm2@bootcamp-tracker.com',
         phone: '+8801700000003',
-        role: 'ADMIN' as const,
-      },
-      {
-        name: 'SRM User 3',
-        email: 'srm3@bootcamp-tracker.com',
-        phone: '+8801700000004',
-        role: 'ADMIN' as const,
+        role: 'SRM' as const,
       },
     ]
 
