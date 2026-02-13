@@ -36,13 +36,17 @@ const fileFormat = combine(
  * Configuration features:
  * 1. Log Level: 'debug' in development, 'info' in production.
  * 2. Transports:
- *    - DailyRotateFile (Application): Stores general info logs, rotated daily, kept for 1 week.
- *    - DailyRotateFile (Error): Specifically captures error level logs for easier troubleshooting.
+ *    - DailyRotateFile (Application): Stores general info logs, rotated daily, kept for 1 week (disabled on Vercel).
+ *    - DailyRotateFile (Error): Specifically captures error level logs for easier troubleshooting (disabled on Vercel).
  */
-export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-  format: fileFormat,
-  transports: [
+
+// Skip file transports on Vercel (read-only filesystem)
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined
+
+const transports = []
+
+if (!isVercel) {
+  transports.push(
     // General application logs - Rotated daily, archived after 5MB, retained for 1 week.
     new DailyRotateFile({
       dirname: LOG_DIR,
@@ -63,16 +67,22 @@ export const logger = winston.createLogger({
       maxFiles: '7d',
       level: 'error',
     }),
-  ],
+  )
+}
+
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  format: fileFormat,
+  transports,
 })
 
 /**
  * Console Logging Configuration.
  *
- * Enabled only in non-production environments.
+ * Enabled in non-production environments and on Vercel.
  * Adds color-coding and simplified timestamps for local development debugging.
  */
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' || isVercel) {
   logger.add(
     new winston.transports.Console({
       format: combine(

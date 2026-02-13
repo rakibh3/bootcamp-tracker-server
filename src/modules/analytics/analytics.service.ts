@@ -208,40 +208,74 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
     attendanceMap.get(key).push(record)
   })
 
-  const resolvedStudents = await Promise.all(
-    assignedStudents.map(async (student: any) => {
-      const userId = student.userId?._id?.toString()
-      const studentAttendance = attendanceMap.get(userId) || []
-      const recentAttendance = studentAttendance.slice(0, 10)
+  // Fetch all call history for assigned students in a single query
+  const allCallHistory = await CallHistory.find({
+    student: {$in: studentUserIds},
+  })
+    .sort({calledAt: -1})
+    .lean()
 
-      const callHistory = await CallHistory.find({
-        student: student.userId?._id,
-        calledBy: srmId,
-      })
-        .sort({calledAt: -1})
-        .limit(10)
-        .lean()
+  const callHistoryMap = new Map()
+  allCallHistory.forEach((call: any) => {
+    const studentId = call.student.toString()
+    if (!callHistoryMap.has(studentId)) {
+      callHistoryMap.set(studentId, [])
+    }
+    callHistoryMap.get(studentId).push(call)
+  })
 
-      const attendedCount = studentAttendance.filter((a: any) => a.status === 'ATTENDED').length
-      const totalPossibleAttendance = studentAttendance.length
-      const attendanceRate =
-        totalPossibleAttendance > 0 ? (attendedCount / totalPossibleAttendance) * 100 : 100
+  const resolvedStudents = assignedStudents.map((student: any) => {
+    const userId = student.userId?._id?.toString()
+    const studentAttendance = attendanceMap.get(userId) || []
+    const recentAttendance = studentAttendance.slice(0, 10)
 
-      return {
-        ...student,
-        recentAttendance: recentAttendance.map((a: any) => ({
-          date: a.date,
-          status: a.status,
-        })),
-        callHistory: callHistory.map((c: any) => ({
-          date: c.calledAt,
-          outcome: c.status,
+    const callHistory = callHistoryMap.get(userId) || []
+
+    const attendedCount = studentAttendance.filter((a: any) => a.status === 'ATTENDED').length
+    const totalPossibleAttendance = studentAttendance.length
+    const attendanceRate =
+      totalPossibleAttendance > 0 ? (attendedCount / totalPossibleAttendance) * 100 : 100
+
+    return {
+      ...student,
+      recentAttendance: recentAttendance.map((a: any) => ({
+        date: a.date,
+        status: a.status,
+      })),
+      callHistory: callHistory.map((c: any) => {
+        const date = new Date(c.calledAt || c.createdAt)
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ]
+        const formattedDate = `${date.getDate()} ${months[date.getMonth()]}`
+
+        let outcome = c.status
+        if (c.status === 'COMPLETED') outcome = 'Received'
+        else if (c.status === 'NO_ANSWER') outcome = 'Not Received'
+        else if (c.status === 'BUSY') outcome = 'Busy'
+        else if (c.status === 'FAILED') outcome = 'Not Received'
+        else if (c.status === 'SCHEDULED') outcome = 'Not Received'
+
+        return {
+          date: formattedDate,
+          outcome,
           note: c.notes,
-        })),
-        riskLevel: attendanceRate < 50 ? 'High' : attendanceRate < 80 ? 'Medium' : 'Low',
-      }
-    }),
-  )
+        }
+      }),
+      riskLevel: attendanceRate < 50 ? 'High' : attendanceRate < 80 ? 'Medium' : 'Low',
+    }
+  })
 
   return {
     totalCalls,

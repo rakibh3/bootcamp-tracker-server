@@ -18,7 +18,7 @@ import {
 
 /**
  * Creates a student attendance record after verifying window status and Student profile existence.
- * 
+ *
  * Business Rules:
  * - Attendance window must be open
  * - User must exist and have STUDENT role
@@ -42,10 +42,7 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
   // Step 2: Validate User exists
   const user = await User.findById(payload.studentId)
   if (!user) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      `User not found with ID: ${payload.studentId}`,
-    )
+    throw new AppError(httpStatus.NOT_FOUND, `User not found with ID: ${payload.studentId}`)
   }
 
   // Step 3: Validate User has STUDENT role
@@ -109,6 +106,21 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
     date: -1,
   })
 
+  // Fetch Call History for all students
+  const allCallHistory = await CallHistory.find({student: {$in: studentIds}}).sort({
+    calledAt: -1,
+  })
+
+  // Build Call History Map
+  const callHistoryMap = new Map()
+  allCallHistory.forEach((call) => {
+    const studentId = call.student.toString()
+    if (!callHistoryMap.has(studentId)) {
+      callHistoryMap.set(studentId, [])
+    }
+    callHistoryMap.get(studentId).push(call)
+  })
+
   const attendanceMap = buildAttendanceMap(allAttendance)
 
   let filteredStudents = filterBySearchTerm(students, query.searchTerm as string | undefined)
@@ -122,6 +134,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
     const studentObj = student.toObject() as any
     const profile = profileMap.get(studentObj._id.toString())
     const attendance = attendanceMap.get(studentObj._id.toString()) || []
+    const callHistory = callHistoryMap.get(studentObj._id.toString()) || []
 
     if (profile) {
       studentObj.discordUsername = profile.discordUsername
@@ -130,12 +143,46 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
 
     const stats = calculateAttendanceStats(attendance)
 
+    // Format call history for frontend
+    const formattedCallHistory = callHistory.map((call: any) => {
+      const date = new Date(call.calledAt || call.createdAt)
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ]
+      const formattedDate = `${date.getDate()} ${months[date.getMonth()]}`
+
+      let outcome = call.status
+      if (call.status === 'COMPLETED') outcome = 'Received'
+      else if (call.status === 'NO_ANSWER') outcome = 'Not Received'
+      else if (call.status === 'BUSY') outcome = 'Busy'
+      else if (call.status === 'FAILED') outcome = 'Not Received'
+      else if (call.status === 'SCHEDULED') outcome = 'Not Received'
+
+      return {
+        date: formattedDate,
+        outcome,
+        note: call.notes,
+      }
+    })
+
     return {
       ...studentObj,
       attendance: stats.attendanceWithIndex,
       attendancePercentage: stats.attendancePercentage,
       totalPresent: stats.totalPresent,
       totalAbsent: stats.totalAbsent,
+      callHistory: formattedCallHistory,
     }
   })
 
@@ -203,14 +250,27 @@ const getSrmStudentsAttendanceFromDatabase = async (
     // Format call history for frontend
     const formattedCallHistory = callHistory.map((call: any) => {
       const date = new Date(call.calledAt || call.createdAt)
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ]
       const formattedDate = `${date.getDate()} ${months[date.getMonth()]}`
 
       let outcome = call.status
       if (call.status === 'COMPLETED') outcome = 'Received'
       else if (call.status === 'NO_ANSWER') outcome = 'Not Received'
       else if (call.status === 'BUSY') outcome = 'Busy'
-      else if (call.status === 'FAILED') outcome = 'Not Received' 
+      else if (call.status === 'FAILED') outcome = 'Not Received'
       else if (call.status === 'SCHEDULED') outcome = 'Not Received'
 
       return {
