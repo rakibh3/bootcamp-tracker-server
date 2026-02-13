@@ -1,10 +1,10 @@
-import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import httpStatus from 'http-status'
 import {JwtPayload} from 'jsonwebtoken'
 
-import emailQueue from '@/config/queue.config'
 import redisClient from '@/config/redis.config'
 import {AppError} from '@/error'
+import {EmailService} from '@/modules/email/email.service'
 import {IAuthResponse, IOTPData, IOTPRequest, IOTPVerify} from '@/modules/otp/otp.interface'
 import {User} from '@/modules/user/user.model'
 import {generateToken} from '@/utils'
@@ -17,7 +17,6 @@ const OTP_RESEND_COOLDOWN = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS || 60
 const OTP_MAX_RESEND = Number(process.env.OTP_MAX_RESEND_ATTEMPTS || 3)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as string
-const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 8)
 
 /**
  * Generates and sends a new OTP via email while enforcing
@@ -25,17 +24,19 @@ const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 8)
  */
 const requestOTP = async (payload: IOTPRequest): Promise<{message: string}> => {
   const {email} = payload
+  const otpKey = getOTPRedisKey(email)
 
-  const user = await User.findOne({email}).lean()
+  const [user, existingData] = await Promise.all([
+    User.findOne({email}).lean(),
+    redisClient.get(otpKey),
+  ])
+
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found')
   }
-  const otpKey = getOTPRedisKey(email)
-
-  const existingData = await redisClient.get(otpKey)
 
   if (existingData) {
-    const otpData: IOTPData = JSON.parse(existingData as string)
+    const otpData: IOTPData = JSON.parse(existingData)
     const now = Date.now()
     const timeSinceLastResend = (now - otpData.lastResendAt) / 1000
 
@@ -56,31 +57,25 @@ const requestOTP = async (payload: IOTPRequest): Promise<{message: string}> => {
   }
 
   const otp = generateOTP()
-  const hashedOTP = await bcrypt.hash(otp, BCRYPT_ROUNDS)
+  // Use crypto for faster hashing than bcrypt for short-lived OTPs
+  const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex')
 
   const otpData: IOTPData = {
     hashedOTP,
     attempts: 0,
-    resendCount: existingData ? JSON.parse(existingData as string).resendCount + 1 : 0,
+    resendCount: existingData ? JSON.parse(existingData).resendCount + 1 : 0,
     lastResendAt: Date.now(),
   }
 
   await redisClient.setex(otpKey, OTP_EXPIRY_SECONDS, JSON.stringify(otpData))
 
   try {
-    await emailQueue.add(
-      {email, otp},
-      {
-        priority: 1,
-        attempts: 3,
-        timeout: 30000,
-      },
-    )
-  } catch (error) {
+    await EmailService.sendOTPEmail(email, otp)
+  } catch (_error) {
     await redisClient.del(otpKey)
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      'Failed to queue OTP email. Please try again.',
+      'Failed to send OTP email. Please try again.',
     )
   }
 
@@ -96,15 +91,18 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
   if (!email || !otp) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Email and OTP are required')
   }
-  const registeredUser = await User.findOne({email}).lean()
-  if (!registeredUser) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
-  }
   const otpKey = getOTPRedisKey(email)
   const userCacheKey = `user:${email}`
 
-  const otpDataString = await redisClient.get(otpKey)
-  const cachedUser = await redisClient.get(userCacheKey)
+  const [registeredUser, otpDataString, cachedUser] = await Promise.all([
+    User.findOne({email}).lean(),
+    redisClient.get(otpKey),
+    redisClient.get(userCacheKey),
+  ])
+
+  if (!registeredUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
+  }
 
   if (!otpDataString) {
     throw new AppError(
@@ -113,7 +111,7 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
     )
   }
 
-  const otpData: IOTPData = JSON.parse(otpDataString as string)
+  const otpData: IOTPData = JSON.parse(otpDataString)
 
   if (otpData.attempts >= OTP_MAX_ATTEMPTS) {
     await redisClient.del(otpKey)
@@ -123,7 +121,8 @@ const verifyOTP = async (payload: IOTPVerify): Promise<IAuthResponse> => {
     )
   }
 
-  const isOTPValid = await bcrypt.compare(otp, otpData.hashedOTP)
+  const currentHashedOTP = crypto.createHash('sha256').update(otp).digest('hex')
+  const isOTPValid = currentHashedOTP === otpData.hashedOTP
 
   if (!isOTPValid) {
     otpData.attempts += 1

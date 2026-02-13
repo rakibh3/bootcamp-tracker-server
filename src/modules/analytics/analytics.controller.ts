@@ -1,6 +1,8 @@
 import httpStatus from 'http-status'
 
 import {AnalyticsServices} from '@/modules/analytics/analytics.service'
+import {AppError} from '@/error'
+import {USER_ROLE} from '@/modules/user/user.constant'
 import {catchAsync, sendResponse} from '@/utils'
 
 /**
@@ -89,6 +91,16 @@ const getAttendanceTrend = catchAsync(async (req, res) => {
  */
 const getSRMPerformance = catchAsync(async (req, res) => {
   const {srmId} = req.params
+  const user = req.user
+
+  // If requesting user is an SRM, they can only access their own data
+  if (user.role === USER_ROLE.SRM && user.id !== srmId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are only authorized to view your own performance metrics',
+    )
+  }
+
   const result = await AnalyticsServices.getSRMPerformanceFromDatabase(srmId as string)
 
   sendResponse(res, {

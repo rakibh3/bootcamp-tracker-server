@@ -9,7 +9,7 @@ const router = express.Router()
 // Route to get dashboard analytics
 router.get(
   '/analytics/dashboard',
-  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   AnalyticsControllers.getDashboardAnalytics,
 )
 
@@ -23,7 +23,7 @@ router.get(
 // Route to get attendance trend
 router.get(
   '/analytics/attendance/trend',
-  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   AnalyticsControllers.getAttendanceTrend,
 )
 
@@ -44,7 +44,7 @@ router.get(
 // Route to get SRM performance metrics
 router.get(
   '/analytics/srm/:srmId',
-  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   AnalyticsControllers.getSRMPerformance,
 )
 

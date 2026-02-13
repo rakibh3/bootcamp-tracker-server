@@ -267,10 +267,15 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
         else if (c.status === 'FAILED') outcome = 'Not Received'
         else if (c.status === 'SCHEDULED') outcome = 'Not Received'
 
+        const {startOfDay, endOfDay} = getDhakaTimeRange()
+        const isToday =
+          date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
+
         return {
           date: formattedDate,
           outcome,
           note: c.notes,
+          isToday,
         }
       }),
       riskLevel: attendanceRate < 50 ? 'High' : attendanceRate < 80 ? 'Medium' : 'Low',

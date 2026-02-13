@@ -10,7 +10,7 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
   const mailOptions = {
     from: process.env.SMTP_FROM || 'noreply@bootcamp-tracker.com',
     to: email,
-    subject: 'Your OTP Code - Bootcamp Tracker',
+    subject: 'Your OTP Code - Catch Async Bootcamp',
     html: `
       <!DOCTYPE html>
       <html>

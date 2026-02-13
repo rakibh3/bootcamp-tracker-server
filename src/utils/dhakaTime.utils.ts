@@ -1,14 +1,18 @@
+import dayjs from 'dayjs'
+import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+const DHAKA_TIMEZONE = 'Asia/Dhaka'
+
 /**
  * Get current time in Dhaka timezone (UTC+6)
  * @returns Date object representing current Dhaka time
  */
 export const getDhakaTime = (): Date => {
-  const now = new Date()
-  const dhakaOffset = 6 * 60 // Dhaka is UTC+6 in minutes
-  const utcTime = now.getTime() + now.getTimezoneOffset() * 60000
-  const dhakaTime = new Date(utcTime + dhakaOffset * 60000)
-
-  return dhakaTime
+  return dayjs().tz(DHAKA_TIMEZONE).toDate()
 }
 
 /**
@@ -16,28 +20,15 @@ export const getDhakaTime = (): Date => {
  * @param targetDate Optional date to get range for (defaults to current Dhaka time)
  * @returns Object containing startOfDay and endOfDay Date objects
  */
-export const getDhakaTimeRange = (targetDate?: Date) => {
-  const dhakaTime = targetDate ? new Date(targetDate) : getDhakaTime()
+export const getDhakaTimeRange = (targetDate?: Date | string | number) => {
+  const dhakaTime = dayjs(targetDate || new Date()).tz(DHAKA_TIMEZONE)
 
-  const startOfDay = new Date(
-    dhakaTime.getFullYear(),
-    dhakaTime.getMonth(),
-    dhakaTime.getDate(),
-    0,
-    0,
-    0,
-    0,
-  )
+  const startOfDay = dhakaTime.startOf('day').toDate()
+  const endOfDay = dhakaTime.endOf('day').toDate()
 
-  const endOfDay = new Date(
-    dhakaTime.getFullYear(),
-    dhakaTime.getMonth(),
-    dhakaTime.getDate(),
-    23,
-    59,
-    59,
-    999,
-  )
-
-  return {startOfDay, endOfDay, dhakaTime}
+  return {
+    startOfDay,
+    endOfDay,
+    dhakaTime: dhakaTime.toDate(),
+  }
 }

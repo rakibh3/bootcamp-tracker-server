@@ -169,10 +169,15 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
       else if (call.status === 'FAILED') outcome = 'Not Received'
       else if (call.status === 'SCHEDULED') outcome = 'Not Received'
 
+      const {startOfDay, endOfDay} = getDhakaTimeRange()
+      const isToday =
+        date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
+
       return {
         date: formattedDate,
         outcome,
         note: call.notes,
+        isToday,
       }
     })
 
@@ -273,10 +278,15 @@ const getSrmStudentsAttendanceFromDatabase = async (
       else if (call.status === 'FAILED') outcome = 'Not Received'
       else if (call.status === 'SCHEDULED') outcome = 'Not Received'
 
+      const {startOfDay, endOfDay} = getDhakaTimeRange()
+      const isToday =
+        date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
+
       return {
         date: formattedDate,
         outcome,
         note: call.notes,
+        isToday,
       }
     })
 
