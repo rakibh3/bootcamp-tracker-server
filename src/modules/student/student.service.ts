@@ -173,7 +173,11 @@ const assignStudentsToSRMInDatabase = async (srmId: string, studentIds: string[]
     throw new AppError(httpStatus.NOT_FOUND, 'SRM not found or user is not an SRM')
   }
 
-  const result = await Student.updateMany({_id: {$in: studentIds}}, {assignedSrmId: srmId})
+  console.log("Srm", srm)
+  console.log("Student Ids", studentIds)
+  console.log("Srm Id", srmId)
+
+  const result = await Student.updateMany({userId: {$in: studentIds}}, {assignedSrmId: srmId})
 
   if (result.matchedCount === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No students found with the provided IDs')

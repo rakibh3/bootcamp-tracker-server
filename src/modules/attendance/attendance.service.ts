@@ -4,6 +4,7 @@ import {AppError} from '@/error'
 import {TAbsentFilter, TAttendance} from '@/modules/attendance/attendance.interface'
 import {Attendance} from '@/modules/attendance/attendance.model'
 import {AttendanceWindow} from '@/modules/attendance/attendance-window.model'
+import {CallHistory} from '@/modules/call-history/call-history.model'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
 import {getDhakaTime, getDhakaTimeRange} from '@/utils'
@@ -163,6 +164,21 @@ const getSrmStudentsAttendanceFromDatabase = async (
     date: -1,
   })
 
+  // Fetch Call History
+  const allCallHistory = await CallHistory.find({student: {$in: studentUserIds}}).sort({
+    calledAt: -1,
+  })
+
+  // Build Call History Map
+  const callHistoryMap = new Map()
+  allCallHistory.forEach((call) => {
+    const studentId = call.student.toString()
+    if (!callHistoryMap.has(studentId)) {
+      callHistoryMap.set(studentId, [])
+    }
+    callHistoryMap.get(studentId).push(call)
+  })
+
   const attendanceMap = buildAttendanceMap(allAttendance)
 
   let filteredStudents = filterBySearchTerm(students, query.searchTerm as string | undefined)
@@ -176,6 +192,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
     const studentObj = student.toObject() as any
     const profile = profileMap.get(studentObj._id.toString())
     const attendance = attendanceMap.get(studentObj._id.toString()) || []
+    const callHistory = callHistoryMap.get(studentObj._id.toString()) || []
 
     if (profile) {
       studentObj.discordUsername = profile.discordUsername
@@ -183,12 +200,33 @@ const getSrmStudentsAttendanceFromDatabase = async (
 
     const stats = calculateAttendanceStats(attendance)
 
+    // Format call history for frontend
+    const formattedCallHistory = callHistory.map((call: any) => {
+      const date = new Date(call.calledAt || call.createdAt)
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const formattedDate = `${date.getDate()} ${months[date.getMonth()]}`
+
+      let outcome = call.status
+      if (call.status === 'COMPLETED') outcome = 'Received'
+      else if (call.status === 'NO_ANSWER') outcome = 'Not Received'
+      else if (call.status === 'BUSY') outcome = 'Busy'
+      else if (call.status === 'FAILED') outcome = 'Not Received' 
+      else if (call.status === 'SCHEDULED') outcome = 'Not Received'
+
+      return {
+        date: formattedDate,
+        outcome,
+        note: call.notes,
+      }
+    })
+
     return {
       ...studentObj,
       attendance: stats.attendanceWithIndex,
       attendancePercentage: stats.attendancePercentage,
       totalPresent: stats.totalPresent,
       totalAbsent: stats.totalAbsent,
+      callHistory: formattedCallHistory,
     }
   })
 
