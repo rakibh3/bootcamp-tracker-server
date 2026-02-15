@@ -4,6 +4,7 @@ import {QueryBuilder} from '@/builder'
 import {AppError} from '@/error'
 import {TCallHistory} from '@/modules/call-history/call-history.interface'
 import {CallHistory} from '@/modules/call-history/call-history.model'
+import {getDhakaTimeRange} from '@/utils'
 
 /**
  * Persists a new call record between an SRM and a student.
@@ -177,11 +178,7 @@ const getScheduledCallsFromDatabase = async (calledBy?: string) => {
  * calendar day.
  */
 const getTodayCallsFromDatabase = async (calledBy?: string) => {
-  const startOfDay = new Date()
-  startOfDay.setHours(0, 0, 0, 0)
-
-  const endOfDay = new Date()
-  endOfDay.setHours(23, 59, 59, 999)
+  const {startOfDay, endOfDay} = getDhakaTimeRange()
 
   const filter: Record<string, unknown> = {
     calledAt: {$gte: startOfDay, $lte: endOfDay},

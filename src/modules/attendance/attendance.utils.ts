@@ -35,7 +35,8 @@ export const filterByAbsentFilter = (
 ) => {
   if (!absentFilter) return students
   const filterDays = absentFilter === 'today' ? 1 : absentFilter === 'last2days' ? 2 : 3
-  const filterDate = new Date()
+  const {dhakaTime} = getDhakaTimeRange()
+  const filterDate = new Date(dhakaTime)
   filterDate.setDate(filterDate.getDate() - filterDays + 1)
   const {startOfDay: filterStart} = getDhakaTimeRange(filterDate)
 

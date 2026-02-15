@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import nodemailer from 'nodemailer'
 
 import emailTransporter from '@/config/email.config'
@@ -46,7 +47,7 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
             </div>
             
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Bootcamp Tracker. All rights reserved.</p>
+              <p>© ${dayjs().tz('Asia/Dhaka').year()} Bootcamp Tracker. All rights reserved.</p>
             </div>
           </div>
         </div>

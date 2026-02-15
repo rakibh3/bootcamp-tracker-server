@@ -138,8 +138,8 @@ const getDashboardAnalyticsFromDatabase = async () => {
  * Generates an attendance trend over a specified number of days
  */
 const getAttendanceTrendFromDatabase = async (days: number = 7) => {
-  const endDate = new Date()
-  const startDate = new Date()
+  const {endOfDay: endDate} = getDhakaTimeRange()
+  const startDate = new Date(endDate)
   startDate.setDate(startDate.getDate() - days)
 
   const trend = await Attendance.aggregate([
@@ -267,7 +267,6 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
         else if (c.status === 'FAILED') outcome = 'Not Received'
         else if (c.status === 'SCHEDULED') outcome = 'Not Received'
 
-        const {startOfDay, endOfDay} = getDhakaTimeRange()
         const isToday =
           date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
 

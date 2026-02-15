@@ -16,6 +16,22 @@ export const getDhakaTime = (): Date => {
 }
 
 /**
+ * Get current time in Dhaka timezone as ISO string
+ * @returns ISO string representation of current Dhaka time
+ */
+export const getDhakaISOString = (): string => {
+  return dayjs().tz(DHAKA_TIMEZONE).format()
+}
+
+/**
+ * Get current time in Dhaka timezone as timestamp
+ * @returns Epoch timestamp in milliseconds
+ */
+export const getDhakaTimestamp = (): number => {
+  return dayjs().tz(DHAKA_TIMEZONE).valueOf()
+}
+
+/**
  * Get start and end of day range for Dhaka timezone
  * @param targetDate Optional date to get range for (defaults to current Dhaka time)
  * @returns Object containing startOfDay and endOfDay Date objects
