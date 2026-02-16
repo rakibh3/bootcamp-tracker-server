@@ -10,12 +10,11 @@ export const createAttendanceValidationSchema = z.object({
     })
     .transform((val) => new Types.ObjectId(val)),
   status: z.enum(['ATTENDED', 'ABSENT']),
-  mission: z.coerce.number(),
-  module: z.coerce.number(),
+  mission: z.coerce.number().min(1).max(8),
+  module: z.coerce.number().min(1).max(99),
   note: z.string().optional(),
-  verificationCode: z.string().optional(),
 })
 
 export const updateAttendanceValidationSchema = createAttendanceValidationSchema
-  .omit({studentId: true, verificationCode: true})
+  .omit({studentId: true})
   .partial()
