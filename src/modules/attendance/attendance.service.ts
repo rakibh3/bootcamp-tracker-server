@@ -168,6 +168,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
       else if (call.status === 'BUSY') outcome = 'Busy'
       else if (call.status === 'FAILED') outcome = 'Not Received'
       else if (call.status === 'SCHEDULED') outcome = 'Not Received'
+      else if (call.status === 'FOREIGN_NUMBER') outcome = 'Foreign Number'
 
       const {startOfDay, endOfDay} = getDhakaTimeRange()
       const isToday =
@@ -277,6 +278,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
       else if (call.status === 'BUSY') outcome = 'Busy'
       else if (call.status === 'FAILED') outcome = 'Not Received'
       else if (call.status === 'SCHEDULED') outcome = 'Not Received'
+      else if (call.status === 'FOREIGN_NUMBER') outcome = 'Foreign Number'
 
       const {startOfDay, endOfDay} = getDhakaTimeRange()
       const isToday =

@@ -1,6 +1,6 @@
 import {Types} from 'mongoose'
 
-export type TCallStatus = 'COMPLETED' | 'NO_ANSWER' | 'BUSY' | 'FAILED' | 'SCHEDULED'
+export type TCallStatus = 'COMPLETED' | 'NO_ANSWER' | 'BUSY' | 'FAILED' | 'SCHEDULED' | 'FOREIGN_NUMBER'
 export type TCallType = 'FOLLOW_UP' | 'REMINDER' | 'SUPPORT' | 'FEEDBACK'
 
 export type TCallHistory = {

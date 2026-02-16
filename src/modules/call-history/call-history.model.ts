@@ -21,7 +21,7 @@ const callHistorySchema = new Schema<TCallHistory>(
     },
     status: {
       type: String,
-      enum: ['COMPLETED', 'NO_ANSWER', 'BUSY', 'FAILED', 'SCHEDULED'],
+      enum: ['COMPLETED', 'NO_ANSWER', 'BUSY', 'FAILED', 'SCHEDULED', 'FOREIGN_NUMBER'],
       required: true,
     },
     duration: {
