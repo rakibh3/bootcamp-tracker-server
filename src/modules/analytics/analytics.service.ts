@@ -142,6 +142,8 @@ const getAttendanceTrendFromDatabase = async (days: number = 7) => {
   const startDate = new Date(endDate)
   startDate.setDate(startDate.getDate() - days)
 
+  const totalStudents = await User.countDocuments({role: 'STUDENT'})
+
   const trend = await Attendance.aggregate([
     {
       $match: {
@@ -153,16 +155,30 @@ const getAttendanceTrendFromDatabase = async (days: number = 7) => {
         _id: {
           $dateToString: {format: '%Y-%m-%d', date: '$date'},
         },
-        present: {
+        totalPresent: {
           $sum: {$cond: [{$eq: ['$status', 'ATTENDED']}, 1, 0]},
         },
-        absent: {
+        totalAbsent: {
           $sum: {$cond: [{$eq: ['$status', 'ABSENT']}, 1, 0]},
         },
-        total: {$sum: 1},
       },
     },
-    {$sort: {_id: 1}},
+    {
+      $project: {
+        _id: 0,
+        date: '$_id',
+        totalPresent: 1,
+        totalAbsent: 1,
+        attendanceRate: {
+          $cond: [
+            {$gt: [totalStudents, 0]},
+            {$multiply: [{$divide: ['$totalPresent', totalStudents]}, 100]},
+            0,
+          ],
+        },
+      },
+    },
+    {$sort: {date: 1}},
   ])
 
   return trend

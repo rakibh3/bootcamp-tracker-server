@@ -22,7 +22,7 @@ router.get(
 
 // Route to get attendance trend
 router.get(
-  '/analytics/attendance/trend',
+  '/analytics/attendance/trends',
   auth(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.SRM),
   AnalyticsControllers.getAttendanceTrend,
 )
