@@ -4,6 +4,9 @@ import {AppError} from '@/error'
 import {TTask} from '@/modules/task/task.interface'
 import {Task} from '@/modules/task/task.model'
 import {getDhakaTimeRange} from '@/utils'
+import {getCache, invalidateCache, setCache} from '@/utils/redisCache'
+
+const TASK_CACHE_TTL = 86400 // 24 hour
 
 /**
  * Creates a new task and enforces one task per due-date day.
@@ -24,6 +27,7 @@ const createTaskIntoDatabase = async (payload: TTask) => {
   }
 
   const result = await Task.create(payload)
+  await invalidateCache('cache:task:*')
   return result
 }
 
@@ -57,6 +61,7 @@ const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => 
     throw new AppError(httpStatus.NOT_FOUND, 'Task not found')
   }
 
+  await invalidateCache('cache:task:*')
   return result
 }
 
@@ -64,6 +69,9 @@ const updateTaskInDatabase = async (taskId: string, payload: Partial<TTask>) => 
  * Fetches the task assigned for the current calendar day.
  */
 const getCurrentTaskFromDatabase = async () => {
+  const cached = await getCache('cache:task:current')
+  if (cached) return cached
+
   const {startOfDay, endOfDay} = getDhakaTimeRange()
 
   const result = await Task.findOne({
@@ -73,6 +81,7 @@ const getCurrentTaskFromDatabase = async () => {
     },
   })
 
+  await setCache('cache:task:current', result, TASK_CACHE_TTL)
   return result
 }
 
@@ -80,12 +89,16 @@ const getCurrentTaskFromDatabase = async () => {
  * Retrieves information about the next scheduled task.
  */
 const getUpcomingTaskFromDatabase = async () => {
+  const cached = await getCache('cache:task:upcoming')
+  if (cached) return cached
+
   const {endOfDay} = getDhakaTimeRange()
 
   const result = await Task.findOne({
     dueDate: {$gt: endOfDay},
   })
 
+  await setCache('cache:task:upcoming', result, TASK_CACHE_TTL)
   return result
 }
 
@@ -93,12 +106,16 @@ const getUpcomingTaskFromDatabase = async () => {
  * Lists all tasks that are past their due date.
  */
 const getDueTasksFromDatabase = async () => {
+  const cached = await getCache('cache:task:due')
+  if (cached) return cached
+
   const {startOfDay} = getDhakaTimeRange()
 
   const result = await Task.find({
     dueDate: {$lt: startOfDay},
   }).sort({dueDate: -1})
 
+  await setCache('cache:task:due', result, TASK_CACHE_TTL)
   return result
 }
 
@@ -110,6 +127,7 @@ const deleteTaskFromDatabase = async (taskId: string) => {
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, 'Task not found')
   }
+  await invalidateCache('cache:task:*')
   return result
 }
 

@@ -7,6 +7,7 @@ import {AppError, unauthorizedErrorResponse} from '@/error'
 import {TUserRole} from '@/modules/user/user.interface'
 import {User} from '@/modules/user/user.model'
 import {catchAsync} from '@/utils'
+import {getCache, setCache} from '@/utils/redisCache'
 
 const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -34,11 +35,19 @@ const auth = (...requiredRoles: TUserRole[]) => {
     const decoded = jwt.verify(token, config.jwt_access_secret as string) as JwtPayload
 
     const {email, role} = decoded
-
-    // checking if the user is exist
-    const user = await User.findOne({
-      email,
-    })
+    
+    // Auth caching: Cache user lookup for 5 mins to reduce DB hits on high traffic routes
+    const authCacheKey = `cache:auth:user:${email}`
+    const cachedUser = await getCache<any>(authCacheKey)
+    
+    let user = cachedUser
+    if (!user) {
+      // checking if the user exists in DB
+      user = await User.findOne({ email }).lean()
+      if (user) {
+        await setCache(authCacheKey, user, 300) // 5 minutes TTL
+      }
+    }
 
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'User not found!')

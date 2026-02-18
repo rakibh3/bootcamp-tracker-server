@@ -22,11 +22,13 @@ export const createTaskValidationSchema = z.object({
     })
     .min(1, 'Guideline cannot be empty'),
 
-  dueDate: z.string({
-    message: 'Due date is required',
-  }).refine((val) => !isNaN(Date.parse(val)), {
-    message: 'Invalid date format. Expected YYYY-MM-DD or ISO string',
-  }),
+  dueDate: z
+    .string({
+      message: 'Due date is required',
+    })
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: 'Invalid date format. Expected YYYY-MM-DD or ISO string',
+    }),
 
   createdBy: z
     .string({

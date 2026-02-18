@@ -8,6 +8,9 @@ import {CallHistory} from '@/modules/call-history/call-history.model'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
 import {getDhakaTime, getDhakaTimeRange} from '@/utils'
+import {getCache, invalidateCache, setCache} from '@/utils/redisCache'
+
+const STUDENT_ATTENDANCE_CACHE_TTL = 172800 // 2 days
 
 import {
   buildAttendanceMap,
@@ -81,6 +84,12 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
     date: dhakaTime,
   })
 
+  await invalidateCache(
+    `cache:attendance:student:${payload.studentId}`,
+    'cache:attendance:list:*',
+    'cache:attendance:srm:*',
+  )
+
   return result
 }
 
@@ -88,7 +97,14 @@ const createAttendanceInDatabase = async (payload: TAttendance) => {
  * Retrieves all attendance records with student profiles
  * and optional absent filters.
  */
-const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
+const getAttendanceFromDatabase = async (query: Record<string, unknown>, userId: string) => {
+  // Per-user cache key with query params (private route)
+  const searchTerm = (query.searchTerm as string) || ''
+  const absentFilter = (query.absentFilter as string) || ''
+  const cacheKey = `cache:attendance:list:${userId}:${searchTerm}:${absentFilter}`
+  const cached = await getCache(cacheKey)
+  if (cached) return cached
+
   const students = await User.find({role: 'STUDENT'}).select(
     'name email phone role createdAt updatedAt',
   )
@@ -171,8 +187,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
       else if (call.status === 'FOREIGN_NUMBER') outcome = 'Foreign Number'
 
       const {startOfDay, endOfDay} = getDhakaTimeRange()
-      const isToday =
-        date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
+      const isToday = date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
 
       return {
         date: formattedDate,
@@ -192,6 +207,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>) => {
     }
   })
 
+  await setCache(cacheKey, result, STUDENT_ATTENDANCE_CACHE_TTL)
   return result
 }
 
@@ -203,6 +219,13 @@ const getSrmStudentsAttendanceFromDatabase = async (
   srmId: string,
   query: Record<string, unknown>,
 ) => {
+  // Per-user cache key with query params (private route)
+  const searchTerm = (query.searchTerm as string) || ''
+  const absentFilter = (query.absentFilter as string) || ''
+  const cacheKey = `cache:attendance:srm:${srmId}:${searchTerm}:${absentFilter}`
+  const cached = await getCache(cacheKey)
+  if (cached) return cached
+
   const assignedStudents = await Student.find({assignedSrmId: srmId}).select(
     'userId discordUsername',
   )
@@ -281,8 +304,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
       else if (call.status === 'FOREIGN_NUMBER') outcome = 'Foreign Number'
 
       const {startOfDay, endOfDay} = getDhakaTimeRange()
-      const isToday =
-        date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
+      const isToday = date.getTime() >= startOfDay.getTime() && date.getTime() <= endOfDay.getTime()
 
       return {
         date: formattedDate,
@@ -302,6 +324,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
     }
   })
 
+  await setCache(cacheKey, result, STUDENT_ATTENDANCE_CACHE_TTL)
   return result
 }
 
@@ -310,6 +333,11 @@ const getSrmStudentsAttendanceFromDatabase = async (
  * a specific student.
  */
 const getAttendanceByIdFromDatabase = async (id: string) => {
+  // Per-user cache key (auth validates JWT before this is called)
+  const cacheKey = `cache:attendance:student:${id}`
+  const cached = await getCache(cacheKey)
+  if (cached) return cached
+
   const student = await User.findById(id).select('name email phone role createdAt updatedAt')
   if (!student) {
     throw new AppError(httpStatus.NOT_FOUND, 'Student not found')
@@ -336,12 +364,15 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
     attendanceIndex: index,
   }))
 
-  return {
+  const data = {
     ...result,
     totalPresent,
     totalAbsent,
     attendancePercentage,
   }
+
+  await setCache(cacheKey, data, STUDENT_ATTENDANCE_CACHE_TTL)
+  return data
 }
 
 /**
@@ -358,6 +389,12 @@ const updateAttendanceInDatabase = async (attendanceId: string, payload: Partial
     runValidators: true,
   })
 
+  await invalidateCache(
+    `cache:attendance:student:${attendance.studentId}`,
+    'cache:attendance:list:*',
+    'cache:attendance:srm:*',
+  )
+
   return result
 }
 
@@ -371,6 +408,11 @@ const deleteAttendanceFromDatabase = async (attendanceId: string) => {
   }
 
   await Attendance.findByIdAndDelete(attendanceId)
+  await invalidateCache(
+    `cache:attendance:student:${attendance.studentId}`,
+    'cache:attendance:list:*',
+    'cache:attendance:srm:*',
+  )
   return {message: 'Attendance record deleted successfully'}
 }
 
@@ -397,6 +439,8 @@ const openAttendanceWindow = async (adminId: string, verificationCode?: string) 
     await windowStatus.save()
   }
 
+  await invalidateCache('cache:attendance:list:*', 'cache:attendance:srm:*')
+
   return windowStatus
 }
 
@@ -413,6 +457,8 @@ const closeAttendanceWindow = async () => {
     windowStatus.closedAt = new Date()
     await windowStatus.save()
   }
+
+  await invalidateCache('cache:attendance:list:*', 'cache:attendance:srm:*')
 
   return windowStatus
 }
@@ -483,6 +529,7 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
   let result = null
   if (absentRecords.length > 0) {
     result = await Attendance.insertMany(absentRecords)
+    await invalidateCache('cache:attendance:student:*', 'cache:attendance:list:*', 'cache:attendance:srm:*')
   }
 
   return {

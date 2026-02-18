@@ -5,6 +5,7 @@ import {AppError} from '@/error'
 import {TStudent} from '@/modules/student/student.interface'
 import {Student} from '@/modules/student/student.model'
 import {User} from '@/modules/user/user.model'
+import {invalidateCache} from '@/utils/redisCache'
 
 /**
  * Initializes a new student profile for an existing user
@@ -173,16 +174,12 @@ const assignStudentsToSRMInDatabase = async (srmId: string, studentIds: string[]
     throw new AppError(httpStatus.NOT_FOUND, 'SRM not found or user is not an SRM')
   }
 
-  console.log("Srm", srm)
-  console.log("Student Ids", studentIds)
-  console.log("Srm Id", srmId)
-
   const result = await Student.updateMany({userId: {$in: studentIds}}, {assignedSrmId: srmId})
 
   if (result.matchedCount === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No students found with the provided IDs')
   }
-
+  await invalidateCache('cache:attendance:*')
   return {
     matchedCount: result.matchedCount,
     modifiedCount: result.modifiedCount,

@@ -21,7 +21,7 @@ const createAttendance = catchAsync(async (req, res) => {
  * Handles request to fetch all attendance records with query filtering
  */
 const getAttendance = catchAsync(async (req, res) => {
-  const result = await AttendanceService.getAttendanceFromDatabase(req.query)
+  const result = await AttendanceService.getAttendanceFromDatabase(req.query, req.user._id)
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

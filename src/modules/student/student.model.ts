@@ -47,4 +47,7 @@ const studentSchema = new Schema<TStudent>(
   },
 )
 
+// Indexes for efficient queries
+studentSchema.index({assignedSrmId: 1})
+
 export const Student = model<TStudent>('Student', studentSchema)

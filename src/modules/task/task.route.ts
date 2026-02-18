@@ -24,23 +24,11 @@ router.patch(
   TaskControllers.updateTask,
 )
 
-router.get(
-  '/task/current',
-  auth(USER_ROLE.ADMIN, USER_ROLE.STUDENT, USER_ROLE.SRM, USER_ROLE.STUDENT),
-  TaskControllers.getCurrentTask,
-)
+router.get('/task/current', TaskControllers.getCurrentTask)
 
-router.get(
-  '/task/upcoming',
-  auth(USER_ROLE.ADMIN, USER_ROLE.STUDENT, USER_ROLE.SRM, USER_ROLE.STUDENT),
-  TaskControllers.getUpcomingTask,
-)
+router.get('/task/upcoming', TaskControllers.getUpcomingTask)
 
-router.get(
-  '/task/due',
-  auth(USER_ROLE.ADMIN, USER_ROLE.STUDENT, USER_ROLE.SRM, USER_ROLE.STUDENT),
-  TaskControllers.getDueTasks,
-)
+router.get('/task/due', TaskControllers.getDueTasks)
 
 router.delete(
   '/task/:taskId',
