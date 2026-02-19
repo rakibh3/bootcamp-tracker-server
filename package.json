@@ -5,7 +5,7 @@
   "main": "index.js",
   "keywords": [],
   "scripts": {
-    "build": "tsc && tsc-alias",
+    "build": "pnpm install && tsc && tsc-alias",
     "start": "node ./dist/server.js",
     "start:prod": "node ./dist/server.js",
     "start:dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
