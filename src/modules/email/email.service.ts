@@ -47,7 +47,7 @@ const sendOTPEmail = async (email: string, otp: string): Promise<void> => {
             </div>
             
             <div class="footer">
-              <p>© ${dayjs().tz('Asia/Dhaka').year()} Bootcamp Tracker. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} CatchAsync Bootcamp. All rights reserved.</p>
             </div>
           </div>
         </div>

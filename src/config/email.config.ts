@@ -5,10 +5,13 @@ import logger from '@/utils/logger'
 
 dotenv.config()
 
+const isGmail = process.env.SMTP_HOST === 'smtp.gmail.com'
+
 const emailTransporter: Transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: false,
+  secure: process.env.SMTP_SECURE === 'true', // Use env var instead of hardcoded false
+  service: isGmail ? 'gmail' : undefined, // Explicit service helps on some cloud providers
   pool: true,
   auth: {
     user: process.env.SMTP_USER,

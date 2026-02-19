@@ -7,7 +7,7 @@ import {AppError} from '@/error'
 import {EmailService} from '@/modules/email/email.service'
 import {IAuthResponse, IOTPData, IOTPRequest, IOTPVerify} from '@/modules/otp/otp.interface'
 import {User} from '@/modules/user/user.model'
-import {generateToken} from '@/utils'
+import {generateToken, logger} from '@/utils'
 
 import {generateOTP, getOTPRedisKey} from './otp.utils'
 
@@ -71,7 +71,8 @@ const requestOTP = async (payload: IOTPRequest): Promise<{message: string}> => {
 
   try {
     await EmailService.sendOTPEmail(email, otp)
-  } catch (_error) {
+  } catch (error) {
+    logger.error('Failed to send OTP email:', error)
     await redisClient.del(otpKey)
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
