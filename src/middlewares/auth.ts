@@ -35,15 +35,15 @@ const auth = (...requiredRoles: TUserRole[]) => {
     const decoded = jwt.verify(token, config.jwt_access_secret as string) as JwtPayload
 
     const {email, role} = decoded
-    
+
     // Auth caching: Cache user lookup for 5 mins to reduce DB hits on high traffic routes
     const authCacheKey = `cache:auth:user:${email}`
     const cachedUser = await getCache<any>(authCacheKey)
-    
+
     let user = cachedUser
     if (!user) {
       // checking if the user exists in DB
-      user = await User.findOne({ email }).lean()
+      user = await User.findOne({email}).lean()
       if (user) {
         await setCache(authCacheKey, user, 300) // 5 minutes TTL
       }

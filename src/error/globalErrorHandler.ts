@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import {ErrorRequestHandler} from 'express'
+import {NextFunction, Request, Response} from 'express'
 import httpStatus from 'http-status'
 import {ZodError} from 'zod'
 
@@ -10,7 +10,7 @@ import logger from '@/utils/logger'
 import {handleCastValidationError} from './castError'
 import {handleDuplicateValidationError} from './duplicateError'
 
-export const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
+export const globalErrorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
   // Log the error with request context for easier debugging
   const statusCode = error.statusCode || 500
   const logMessage = `${req.method} ${req.originalUrl} - ${error.message || 'Error'}`

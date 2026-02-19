@@ -16,7 +16,7 @@ const emailTransporter: Transporter = nodemailer.createTransport({
   },
 })
 
-emailTransporter.verify((error) => {
+emailTransporter.verify((error: Error | null) => {
   if (error) {
     logger.error('Email transporter error:', error)
   } else {

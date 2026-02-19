@@ -110,7 +110,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>, userId:
     .select('name email phone role createdAt updatedAt')
     .lean()
 
-  const studentIds = students.map((s) => s._id)
+  const studentIds = students.map((s: any) => s._id)
 
   const [studentProfilesData, allAttendanceData, allCallHistoryData] = await Promise.all([
     Student.find({userId: {$in: studentIds}})
@@ -231,8 +231,8 @@ const getSrmStudentsAttendanceFromDatabase = async (
   const assignedStudents = await Student.find({assignedSrmId: srmId}).select(
     'userId discordUsername',
   )
-  const studentUserIds = assignedStudents.map((s) => s.userId)
-  const profileMap = new Map(assignedStudents.map((s) => [s.userId.toString(), s]))
+  const studentUserIds = assignedStudents.map((s: any) => s.userId)
+  const profileMap = new Map(assignedStudents.map((s: any) => [s.userId.toString(), s]))
 
   const students = await User.find({_id: {$in: studentUserIds}}).select(
     'name email phone role createdAt updatedAt',
@@ -249,7 +249,7 @@ const getSrmStudentsAttendanceFromDatabase = async (
 
   // Build Call History Map
   const callHistoryMap = new Map()
-  allCallHistory.forEach((call) => {
+  allCallHistory.forEach((call: any) => {
     const studentId = call.student.toString()
     if (!callHistoryMap.has(studentId)) {
       callHistoryMap.set(studentId, [])
@@ -355,13 +355,13 @@ const getAttendanceByIdFromDatabase = async (id: string) => {
     result.discordUsername = profile.discordUsername
   }
 
-  const totalPresent = attendance.filter((a) => a.status === 'ATTENDED').length
-  const totalAbsent = attendance.filter((a) => a.status === 'ABSENT').length
+  const totalPresent = attendance.filter((a: any) => a.status === 'ATTENDED').length
+  const totalAbsent = attendance.filter((a: any) => a.status === 'ABSENT').length
   const totalAttendance = totalPresent + totalAbsent
   const attendancePercentage =
     totalAttendance > 0 ? Number(((totalPresent / totalAttendance) * 100).toFixed(2)) : 0
 
-  result.attendance = attendance.map((record, index) => ({
+  result.attendance = attendance.map((record: any, index: number) => ({
     ...record.toObject(),
     attendanceIndex: index,
   }))
@@ -504,7 +504,7 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
   }
 
   const allStudents = await User.find({role: 'STUDENT'}).select('_id')
-  const allStudentIds = allStudents.map((s) => s._id)
+  const allStudentIds = allStudents.map((s: any) => s._id)
 
   const studentsWithAttendance = await Attendance.find({
     studentId: {$in: allStudentIds},
@@ -512,14 +512,14 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
   }).select('studentId')
 
   const studentsWithAttendanceIds = new Set(
-    studentsWithAttendance.map((a) => a.studentId.toString()),
+    studentsWithAttendance.map((a: any) => a.studentId.toString()),
   )
 
   const studentsWithoutAttendance = allStudentIds.filter(
-    (id) => !studentsWithAttendanceIds.has(id.toString()),
+    (id: any) => !studentsWithAttendanceIds.has(id.toString()),
   )
 
-  const absentRecords = studentsWithoutAttendance.map((studentId) => ({
+  const absentRecords = studentsWithoutAttendance.map((studentId: any) => ({
     studentId,
     status: 'ABSENT' as const,
     mission: 0,
@@ -531,7 +531,11 @@ const markUsersAbsentForDate = async (targetDate?: Date) => {
   let result = null
   if (absentRecords.length > 0) {
     result = await Attendance.insertMany(absentRecords)
-    await invalidateCache('cache:attendance:student:*', 'cache:attendance:list:*', 'cache:attendance:srm:*')
+    await invalidateCache(
+      'cache:attendance:student:*',
+      'cache:attendance:list:*',
+      'cache:attendance:srm:*',
+    )
   }
 
   return {

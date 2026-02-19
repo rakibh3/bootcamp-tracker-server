@@ -24,7 +24,7 @@ const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379',
   },
 
   // Reconnect on error
-  reconnectOnError: (err) => {
+  reconnectOnError: (err: Error) => {
     const targetError = 'READONLY'
     if (err.message.includes(targetError)) {
       return true
@@ -42,7 +42,7 @@ redisClient.on('ready', () => {
   logger.info('Redis ready for commands')
 })
 
-redisClient.on('error', (err) => {
+redisClient.on('error', (err: Error) => {
   logger.error('Redis connection error:', err)
 })
 
