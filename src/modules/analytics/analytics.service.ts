@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import {
   TAttendanceStats,
   TCallStats,
@@ -38,21 +39,33 @@ const getAttendanceStatsFromDatabase = async (): Promise<TAttendanceStats> => {
  * Retrieves aggregate statistics of students grouped by their status
  */
 const getStudentStatsFromDatabase = async (): Promise<TStudentStats> => {
-  const [totalStudents, activeStudents, inactiveStudents, droppedStudents, completedStudents] =
-    await Promise.all([
-      Student.countDocuments(),
-      Student.countDocuments({status: 'ACTIVE'}),
-      Student.countDocuments({status: 'INACTIVE'}),
-      Student.countDocuments({status: 'DROPPED'}),
-      Student.countDocuments({status: 'COMPLETED'}),
-    ])
+  const stats = await Student.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalStudents: {$sum: 1},
+        activeStudents: {$sum: {$cond: [{$eq: ['$status', 'ACTIVE']}, 1, 0]}},
+        inactiveStudents: {$sum: {$cond: [{$eq: ['$status', 'INACTIVE']}, 1, 0]}},
+        droppedStudents: {$sum: {$cond: [{$eq: ['$status', 'DROPPED']}, 1, 0]}},
+        completedStudents: {$sum: {$cond: [{$eq: ['$status', 'COMPLETED']}, 1, 0]}},
+      },
+    },
+  ])
+
+  const result = stats[0] || {
+    totalStudents: 0,
+    activeStudents: 0,
+    inactiveStudents: 0,
+    droppedStudents: 0,
+    completedStudents: 0,
+  }
 
   return {
-    totalStudents,
-    activeStudents,
-    inactiveStudents,
-    droppedStudents,
-    completedStudents,
+    totalStudents: result.totalStudents,
+    activeStudents: result.activeStudents,
+    inactiveStudents: result.inactiveStudents,
+    droppedStudents: result.droppedStudents,
+    completedStudents: result.completedStudents,
   }
 }
 
@@ -60,7 +73,7 @@ const getStudentStatsFromDatabase = async (): Promise<TStudentStats> => {
  * Retrieves call history statistics within a given date range
  */
 const getCallStatsFromDatabase = async (dateRange?: TDateRange): Promise<TCallStats> => {
-  const filter: Record<string, unknown> = {}
+  const filter: Record<string, any> = {}
 
   if (dateRange) {
     filter.calledAt = {
@@ -69,26 +82,45 @@ const getCallStatsFromDatabase = async (dateRange?: TDateRange): Promise<TCallSt
     }
   }
 
-  const [totalCalls, completedCalls, missedCalls, scheduledCalls] = await Promise.all([
-    CallHistory.countDocuments(filter),
-    CallHistory.countDocuments({...filter, status: 'COMPLETED'}),
-    CallHistory.countDocuments({...filter, status: {$in: ['NO_ANSWER', 'BUSY', 'FAILED']}}),
-    CallHistory.countDocuments({...filter, status: 'SCHEDULED'}),
+  const stats = await CallHistory.aggregate([
+    {$match: filter},
+    {
+      $facet: {
+        counts: [
+          {
+            $group: {
+              _id: null,
+              totalCalls: {$sum: 1},
+              completedCalls: {$sum: {$cond: [{$eq: ['$status', 'COMPLETED']}, 1, 0]}},
+              missedCalls: {
+                $sum: {$cond: [{$in: ['$status', ['NO_ANSWER', 'BUSY', 'FAILED']]}, 1, 0]},
+              },
+              scheduledCalls: {$sum: {$cond: [{$eq: ['$status', 'SCHEDULED']}, 1, 0]}},
+            },
+          },
+        ],
+        averageDuration: [
+          {$match: {status: 'COMPLETED', duration: {$gt: 0}}},
+          {$group: {_id: null, avgDuration: {$avg: '$duration'}}},
+        ],
+      },
+    },
   ])
 
-  const durationResult = await CallHistory.aggregate([
-    {$match: {...filter, status: 'COMPLETED', duration: {$gt: 0}}},
-    {$group: {_id: null, avgDuration: {$avg: '$duration'}}},
-  ])
-
-  const averageDuration = durationResult.length > 0 ? Math.round(durationResult[0].avgDuration) : 0
+  const counts = stats[0].counts[0] || {
+    totalCalls: 0,
+    completedCalls: 0,
+    missedCalls: 0,
+    scheduledCalls: 0,
+  }
+  const avgDuration = Math.round(stats[0].averageDuration[0]?.avgDuration || 0)
 
   return {
-    totalCalls,
-    completedCalls,
-    missedCalls,
-    scheduledCalls,
-    averageDuration,
+    totalCalls: counts.totalCalls,
+    completedCalls: counts.completedCalls,
+    missedCalls: counts.missedCalls,
+    scheduledCalls: counts.scheduledCalls,
+    averageDuration: avgDuration,
   }
 }
 
@@ -192,20 +224,40 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
   const startOfWeek = new Date(startOfDay)
   startOfWeek.setDate(startOfWeek.getDate() - 7)
 
-  const [totalCalls, callsToday, callsThisWeek, assignedStudents] = await Promise.all([
-    CallHistory.countDocuments({calledBy: srmId}),
-    CallHistory.countDocuments({
-      calledBy: srmId,
-      calledAt: {$gte: startOfDay, $lte: endOfDay},
-    }),
-    CallHistory.countDocuments({
-      calledBy: srmId,
-      calledAt: {$gte: startOfWeek, $lte: endOfDay},
-    }),
+  const [callStats, assignedStudents] = await Promise.all([
+    CallHistory.aggregate([
+      {$match: {calledBy: new mongoose.Types.ObjectId(srmId)}},
+      {
+        $group: {
+          _id: null,
+          totalCalls: {$sum: 1},
+          callsToday: {
+            $sum: {
+              $cond: [
+                {$and: [{$gte: ['$calledAt', startOfDay]}, {$lte: ['$calledAt', endOfDay]}]},
+                1,
+                0,
+              ],
+            },
+          },
+          callsThisWeek: {
+            $sum: {
+              $cond: [
+                {$and: [{$gte: ['$calledAt', startOfWeek]}, {$lte: ['$calledAt', endOfDay]}]},
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]),
     Student.find({assignedSrmId: srmId})
       .populate('userId', 'name email phone discordUsername')
       .lean(),
   ])
+
+  const stats = callStats[0] || {totalCalls: 0, callsToday: 0, callsThisWeek: 0}
 
   const studentUserIds = assignedStudents.map((s: any) => s.userId?._id)
 
@@ -298,9 +350,9 @@ const getSRMPerformanceFromDatabase = async (srmId: string) => {
   })
 
   return {
-    totalCalls,
-    callsToday,
-    callsThisWeek,
+    totalCalls: stats.totalCalls,
+    callsToday: stats.callsToday,
+    callsThisWeek: stats.callsThisWeek,
     assignedStudents: assignedStudents.length,
     students: resolvedStudents,
   }

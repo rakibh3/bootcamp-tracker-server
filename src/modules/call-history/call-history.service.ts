@@ -5,12 +5,22 @@ import {AppError} from '@/error'
 import {TCallHistory} from '@/modules/call-history/call-history.interface'
 import {CallHistory} from '@/modules/call-history/call-history.model'
 import {getDhakaTimeRange} from '@/utils'
+import {invalidateCache} from '@/utils/redisCache'
 
 /**
  * Persists a new call record between an SRM and a student.
  */
 const createCallHistoryIntoDatabase = async (payload: TCallHistory) => {
   const result = await CallHistory.create(payload)
+
+  // Invalidate attendance lists and student specific attendance cache
+  // since call history is displayed there.
+  await invalidateCache(
+    `cache:attendance:student:${payload.student}`,
+    'cache:attendance:list:*',
+    'cache:attendance:srm:*',
+  )
+
   return result
 }
 

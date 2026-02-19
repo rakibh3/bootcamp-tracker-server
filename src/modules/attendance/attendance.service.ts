@@ -12,6 +12,7 @@ import {getCache, invalidateCache, setCache} from '@/utils/redisCache'
 
 const STUDENT_ATTENDANCE_CACHE_TTL = 172800 // 2 days
 
+import mongoose from 'mongoose'
 import {
   buildAttendanceMap,
   calculateAttendanceStats,
@@ -105,31 +106,32 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>, userId:
   const cached = await getCache(cacheKey)
   if (cached) return cached
 
-  const students = await User.find({role: 'STUDENT'}).select(
-    'name email phone role createdAt updatedAt',
-  )
-
-  const studentProfiles = await Student.find({
-    userId: {$in: students.map((s) => s._id)},
-  })
-    .select('userId discordUsername assignedSrmId')
-    .populate('assignedSrmId', 'name email')
-
-  const profileMap = new Map(studentProfiles.map((p) => [p.userId.toString(), p]))
+  const students = await User.find({role: 'STUDENT'})
+    .select('name email phone role createdAt updatedAt')
+    .lean()
 
   const studentIds = students.map((s) => s._id)
-  const allAttendance = await Attendance.find({studentId: {$in: studentIds}}).sort({
-    date: -1,
-  })
 
-  // Fetch Call History for all students
-  const allCallHistory = await CallHistory.find({student: {$in: studentIds}}).sort({
-    calledAt: -1,
-  })
+  const [studentProfilesData, allAttendanceData, allCallHistoryData] = await Promise.all([
+    Student.find({userId: {$in: studentIds}})
+      .select('userId discordUsername assignedSrmId')
+      .populate('assignedSrmId', 'name email')
+      .lean(),
+    Attendance.find({studentId: {$in: studentIds}})
+      .select('studentId status mission module date note')
+      .sort({date: -1})
+      .lean(),
+    CallHistory.find({student: {$in: studentIds}})
+      .select('student status notes calledAt createdAt')
+      .sort({calledAt: -1})
+      .lean(),
+  ])
+
+  const profileMap = new Map(studentProfilesData.map((p: any) => [p.userId.toString(), p]))
 
   // Build Call History Map
   const callHistoryMap = new Map()
-  allCallHistory.forEach((call) => {
+  allCallHistoryData.forEach((call: any) => {
     const studentId = call.student.toString()
     if (!callHistoryMap.has(studentId)) {
       callHistoryMap.set(studentId, [])
@@ -137,7 +139,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>, userId:
     callHistoryMap.get(studentId).push(call)
   })
 
-  const attendanceMap = buildAttendanceMap(allAttendance)
+  const attendanceMap = buildAttendanceMap(allAttendanceData)
 
   let filteredStudents = filterBySearchTerm(students, query.searchTerm as string | undefined)
   filteredStudents = filterByAbsentFilter(
@@ -147,7 +149,7 @@ const getAttendanceFromDatabase = async (query: Record<string, unknown>, userId:
   )
 
   const result = filteredStudents.map((student) => {
-    const studentObj = student.toObject() as any
+    const studentObj = student as any
     const profile = profileMap.get(studentObj._id.toString())
     const attendance = attendanceMap.get(studentObj._id.toString()) || []
     const callHistory = callHistoryMap.get(studentObj._id.toString()) || []

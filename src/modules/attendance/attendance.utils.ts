@@ -11,7 +11,7 @@ export const buildAttendanceMap = (attendanceRecords: any[]): Map<string, TAtten
     if (!attendanceMap.has(key)) {
       attendanceMap.set(key, [])
     }
-    attendanceMap.get(key)!.push(record.toObject() as TAttendance)
+    attendanceMap.get(key)!.push(record as TAttendance)
   })
   return attendanceMap
 }
